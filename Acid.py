@@ -46,7 +46,7 @@ class topwindow:
 		####################
 		self.logo = tk.PhotoImage(data=logodata)
 		self.logolabel = tk.Label(master, image=self.logo)
-		master.tk.call('wm','iconphoto',root._w,self.logo)
+		master.tk.call('wm','iconphoto',self.master._w,self.logo)
 		self.logolabel.grid(row=0, column=0, rowspan=4, sticky=tk.W+tk.N)
 		####################
 		self.ipaddresslabel = tk.Label(master, text="Hostname or IP Address")
@@ -266,6 +266,7 @@ class basicwindow:
 	def __init__(self, master):
 		self.bw = tk.Toplevel(master)
 		self.bw.title("Acid Basic Settings")
+		self.bw.tk.call('wm','iconphoto',self.bw._w,gui.logo)
 		######## NTP ########
 		self.ntpheader = tk.Label(self.bw, text="Step 1: Add NTP Servers", font=("Helvetica", 12, "bold"))
 		self.ntpheader.grid(row=0, column=0, columnspan=4)
@@ -602,12 +603,14 @@ class basicwindow:
 		self.aaepsubframe = tk.Frame(self.aaepframe, borderwidth=1, relief=tk.SUNKEN)
 		self.aaepsubframe.grid(row=2, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
 		self.aaepsubframe.grid_columnconfigure(3, weight=1)
-		self.aaepsubmit = tk.Button(self.aaepsubframe, text='Submit AAEP', command=self.submit_aaep)
-		self.aaepsubmit.grid(row=0, column=0)
+		self.aaepsubmitspacer = tk.Label(self.aaepsubframe, text=" "*60)
+		self.aaepsubmitspacer.grid(row=0, column=0)
+		self.aaepsubmit = tk.Button(self.aaepsubframe, text='Submit AAEP Settings', command=self.submit_aaep)
+		self.aaepsubmit.grid(row=0, column=1, sticky=tk.E)
 		self.aaepchecktext = tk.StringVar()
 		self.aaepchecktext.set("")
 		self.aaepchecklabel = tk.Label(self.aaepsubframe, textvariable=self.aaepchecktext)
-		self.aaepchecklabel.grid(row=0, column=1, sticky=tk.W)
+		self.aaepchecklabel.grid(row=0, column=2, sticky=tk.W)
 		#######################
 		######## CLOSE ########
 		self.closebutton = tk.Button(self.bw, text='Close', command=self.close)
