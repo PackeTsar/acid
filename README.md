@@ -6,7 +6,7 @@ An application for initial setup and configuration of Cisco ACI (Application Cen
 -----------------------------------------
 Acid is still in development. Download alpha versions at your own risk.
 
-The version of **Acid** documented here is: **v0.3.0**
+The version of **Acid** documented here is: **v0.4.0**
 
 
 ####   TABLE OF CONTENTS   ####

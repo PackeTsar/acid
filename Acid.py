@@ -35,7 +35,7 @@ except ImportError:
 	import Tkinter as tk
 	from tkinter import ttk
 
-version = "0.3.0"
+version = "0.4.0"
 
 class topwindow:
 	def __init__(self, master):
@@ -257,7 +257,6 @@ class topwindow:
 			self.viewpassbutton.configure(text='Show Password')
 			self.viewpasswordstate = False
 	def open_web(self, url):
-		print(url.widget.cget("text"))
 		webbrowser.open_new(url.widget.cget("text"))
 	def close(self):
 		self.master.destroy()
@@ -274,7 +273,7 @@ class basicwindow:
 		self.ntplabel.grid(row=1, column=0, sticky=tk.E)
 		self.ntpentry = tk.Entry(self.bw, bd=5, width=35)
 		self.ntpentry.grid(row=1, column=1)
-		self.ntpsubmit = tk.Button(self.bw, text='Post NTP', command=self.submit_ntp)
+		self.ntpsubmit = tk.Button(self.bw, text='Add NTP Server', command=self.submit_ntp)
 		self.ntpsubmit.grid(row=1, column=3)
 		self.ntpchecktext = tk.StringVar()
 		self.ntpchecktext.set("")
@@ -297,7 +296,7 @@ class basicwindow:
 		self.dnssvrlabel.grid(row=12, column=0, sticky=tk.E)
 		self.dnssvrentry = tk.Entry(self.bw, bd=5, width=35)
 		self.dnssvrentry.grid(row=12, column=1)
-		self.dnssvrsubmit = tk.Button(self.bw, text='Post DNS Server', command=self.submit_dns_server)
+		self.dnssvrsubmit = tk.Button(self.bw, text='Add DNS Server', command=self.submit_dns_server)
 		self.dnssvrsubmit.grid(row=12, column=3)
 		self.dnssvrchecktext = tk.StringVar()
 		self.dnssvrchecktext.set("")
@@ -315,7 +314,7 @@ class basicwindow:
 		self.dnsdmnlabel.grid(row=14, column=0, sticky=tk.E)
 		self.dnsdmnentry = tk.Entry(self.bw, bd=5, width=35)
 		self.dnsdmnentry.grid(row=14, column=1)
-		self.dnsdmnsubmit = tk.Button(self.bw, text='Post DNS Domain', command=self.submit_dns_domain)
+		self.dnsdmnsubmit = tk.Button(self.bw, text='Set DNS Domain', command=self.submit_dns_domain)
 		self.dnsdmnsubmit.grid(row=14, column=3)
 		self.dnsdmnchecktext = tk.StringVar()
 		self.dnsdmnchecktext.set("")
@@ -342,41 +341,66 @@ class basicwindow:
 		######## POD ########
 		self.podframe = tk.Frame(self.bw, borderwidth=4, relief=tk.RAISED)
 		self.podframe.grid(row=22, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
-		self.podlabel = tk.Label(self.podframe, text="Select an ACI Pod     ")
-		self.podlabel.grid(row=0, column=0, sticky="en")
-		self.podvar = tk.StringVar(self.podframe)
+		self.podframe.grid_columnconfigure(1, weight=1)
+		self.podheadframe = tk.Frame(self.podframe)
+		self.podheadframe.grid(row=0, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.podheadframe.grid_columnconfigure(0, weight=1)
+		self.podheader = tk.Label(self.podheadframe, text="Step 3: ACI Pod Setup", font=("Helvetica", 12, "bold"))
+		self.podheader.grid(row=0, column=0)
+		######
+		self.podselectframe = tk.Frame(self.podframe, borderwidth=1, relief=tk.SUNKEN)
+		self.podselectframe.grid(row=1, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.podlabel = tk.Label(self.podselectframe, text="Select an ACI Pod")
+		self.podlabel.grid(row=1, column=0, sticky="e")
+		self.podvar = tk.StringVar(self.podselectframe)
 		self.podvar.set("Select a Pod")
-		self.podmenu = ttk.Combobox(self.podframe, textvariable=self.podvar, width=15)
+		self.podmenu = ttk.Combobox(self.podselectframe, textvariable=self.podvar, width=15)
 		self.podmenu.state(['readonly'])
-		self.podmenu.grid(row=0, column=1)
-		self.podupdate = tk.Button(self.podframe, text='Update Pod List', command=self.update_pod_list)
-		self.podupdate.grid(row=0, column=2)
+		self.podmenu.grid(row=1, column=1)
+		self.podupdate = tk.Button(self.podselectframe, text='Update Pod List', command=self.update_pod_list)
+		self.podupdate.grid(row=1, column=2, sticky="w")
 		self.podupdatetext = tk.StringVar()
 		self.podupdatetext.set("")
-		self.podupdatelabel = tk.Label(self.podframe, textvariable=self.podupdatetext)
-		self.podupdatelabel.grid(row=1, column=1)
+		self.podupdatelabel = tk.Label(self.podselectframe, textvariable=self.podupdatetext)
+		self.podupdatelabel.grid(row=2, column=1)
+		######
+		self.podprofframe = tk.Frame(self.podframe, borderwidth=1, relief=tk.SUNKEN)
+		self.podprofframe.grid(row=1, column=1, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.podprofframe.grid_columnconfigure(0, weight=1)
+		self.podprofassign = tk.Button(self.podprofframe, text='Assign Default Pod Policy Group to Pod Profile', command=self.submit_pod_prof)
+		self.podprofassign.grid(row=0, column=0)
+		self.podproftext = tk.StringVar()
+		self.podproftext.set("")
+		self.podproflabel = tk.Label(self.podprofframe, textvariable=self.podproftext)
+		self.podproflabel.grid(row=1, column=0)
 		#####################
 		######## BGP ########
 		self.bgpframe = tk.Frame(self.bw, borderwidth=4, relief=tk.RAISED)
 		self.bgpframe.grid(row=23, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
-		self.bgpheader = tk.Label(self.bgpframe, text="Step 3: Setup BGP", font=("Helvetica", 12, "bold"))
-		self.bgpheader.grid(row=0, column=0, columnspan=101, sticky="en")
-		self.bgpasnlabel = tk.Label(self.bgpframe, text="BGP Autonomous System Number (ASN)       ")
+		self.bgpframe.grid_columnconfigure(0, weight=1)
+		self.bgpheadframe = tk.Frame(self.bgpframe)
+		self.bgpheadframe.grid(row=0, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.bgpheadframe.grid_columnconfigure(0, weight=1)
+		self.bgpheader = tk.Label(self.bgpheadframe, text="Step 4: Setup BGP", font=("Helvetica", 12, "bold"))
+		self.bgpheader.grid(row=0, column=0)
+		self.bgpasnframe = tk.Frame(self.bgpframe, borderwidth=1, relief=tk.SUNKEN)
+		self.bgpasnframe.grid(row=1, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.bgpasnlabel = tk.Label(self.bgpasnframe, text="BGP Autonomous System Number (ASN)       ")
 		self.bgpasnlabel.grid(row=1, column=0, sticky="en")
-		self.bgpasnentry = tk.Entry(self.bgpframe, bd=5, width=15)
+		self.bgpasnentry = tk.Entry(self.bgpasnframe, bd=5, width=15)
 		self.bgpasnentry.grid(row=1, column=1)
-		self.bgpasnsubmit = tk.Button(self.bgpframe, text='Post BGP ASN', command=self.submit_assign_bgpasn)
+		self.bgpasnsubmit = tk.Button(self.bgpasnframe, text='Assign BGP ASN', command=self.submit_assign_bgpasn)
 		self.bgpasnsubmit.grid(row=1, column=2)
 		self.bgpasnchecktext = tk.StringVar()
 		self.bgpasnchecktext.set("")
-		self.bgpasnchecklabel = tk.Label(self.bgpframe, textvariable=self.bgpasnchecktext)
+		self.bgpasnchecklabel = tk.Label(self.bgpasnframe, textvariable=self.bgpasnchecktext)
 		self.bgpasnchecklabel.grid(row=2, column=1, columnspan=101)
 		self.bgpasnstatustext = tk.StringVar()
 		self.bgpasnstatustext.set("")
-		self.bgpasnstatuslabel = tk.Label(self.bgpframe, textvariable=self.bgpasnstatustext)
+		self.bgpasnstatuslabel = tk.Label(self.bgpasnframe, textvariable=self.bgpasnstatustext)
 		self.bgpasnstatuslabel.grid(row=1, column=3)
 		######
-		self.bgprrframe = tk.Frame(self.bgpframe)
+		self.bgprrframe = tk.Frame(self.bgpframe, borderwidth=1, relief=tk.SUNKEN)
 		self.bgprrframe.grid(row=3, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
 		self.bgpasnlabel = tk.Label(self.bgprrframe, text="Add BGP Route Reflector Nodes  ")
 		self.bgpasnlabel.grid(row=0, column=0, sticky="en")
@@ -397,6 +421,193 @@ class basicwindow:
 		self.bgprrupdatetext.set("")
 		self.bgprrupdatelabel = tk.Label(self.bgprrframe, textvariable=self.bgprrupdatetext)
 		self.bgprrupdatelabel.grid(row=1, column=1)
+		##########################
+		######## IF-PROFs ########
+		self.ifprofframe = tk.Frame(self.bw, borderwidth=4, relief=tk.RAISED)
+		self.ifprofframe.grid(row=24, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.ifprofframe.grid_columnconfigure(1, weight=1)
+		self.ifprofheadframe = tk.Frame(self.ifprofframe)
+		self.ifprofheadframe.grid(row=0, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.ifprofheadframe.grid_columnconfigure(0, weight=1)
+		self.ifprofheader = tk.Label(self.ifprofheadframe, text="Step 5: Create Interface Profiles", font=("Helvetica", 12, "bold"))
+		self.ifprofheader.grid(row=0, column=0)
+		######
+		self.ifprofdisframe = tk.Frame(self.ifprofframe, borderwidth=1, relief=tk.SUNKEN)
+		self.ifprofdisframe.grid(row=1, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.ifprofdisframe.grid_columnconfigure(3, weight=1)
+		self.ifprofdisheader = tk.Label(self.ifprofdisframe, text="Discovery Protocols", font=("Helvetica", 8, "bold"))
+		self.ifprofdisheader.grid(row=0, column=0, columnspan=2)
+		self.ifprofcdpenvar = tk.IntVar(value=1)
+		self.ifprofcdpen = tk.Checkbutton(self.ifprofdisframe, text="CDP Enabled", 
+		variable=self.ifprofcdpenvar, command= lambda: self.disable_entry(self.ifprofcdpenentry, self.ifprofcdpenvar))
+		self.ifprofcdpen.grid(row=1, column=0)
+		self.ifprofcdpenentry = tk.Entry(self.ifprofdisframe, bd=1, width=15)
+		self.ifprofcdpenentry.grid(row=2, column=0)
+		self.ifprofcdpenentry.insert(tk.END, 'Enabled')
+		self.ifprofcdpdisvar = tk.IntVar(value=1)
+		self.ifprofcdpdis = tk.Checkbutton(self.ifprofdisframe, text="CDP Disabled", 
+		variable=self.ifprofcdpdisvar, command= lambda: self.disable_entry(self.ifprofcdpdisentry, self.ifprofcdpdisvar))
+		self.ifprofcdpdis.grid(row=1, column=1)
+		self.ifprofcdpdisentry = tk.Entry(self.ifprofdisframe, bd=1, width=15)
+		self.ifprofcdpdisentry.insert(tk.END, 'Disabled')
+		self.ifprofcdpdisentry.grid(row=2, column=1)
+		self.ifproflldpenvar = tk.IntVar(value=1)
+		self.ifproflldpen = tk.Checkbutton(self.ifprofdisframe, text="LLDP Enabled", 
+		variable=self.ifproflldpenvar, command= lambda: self.disable_entry(self.ifproflldpenentry, self.ifproflldpenvar))
+		self.ifproflldpen.grid(row=3, column=0)
+		self.ifproflldpenentry = tk.Entry(self.ifprofdisframe, bd=1, width=15)
+		self.ifproflldpenentry.grid(row=4, column=0)
+		self.ifproflldpenentry.insert(tk.END, 'Enabled')
+		self.ifproflldpdisvar = tk.IntVar(value=1)
+		self.ifproflldpdis = tk.Checkbutton(self.ifprofdisframe, text="LLDP Disabled", 
+		variable=self.ifproflldpdisvar, command= lambda: self.disable_entry(self.ifproflldpdisentry, self.ifproflldpdisvar))
+		self.ifproflldpdis.grid(row=3, column=1)
+		self.ifproflldpdisentry = tk.Entry(self.ifprofdisframe, bd=1, width=15)
+		self.ifproflldpdisentry.grid(row=4, column=1)
+		self.ifproflldpdisentry.insert(tk.END, 'Disabled')
+		######
+		self.ifprofllframe = tk.Frame(self.ifprofframe, borderwidth=1, relief=tk.SUNKEN)
+		self.ifprofllframe.grid(row=1, column=1, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.ifprofllframe.grid_columnconfigure(0, weight=1)
+		self.ifprofllheader = tk.Label(self.ifprofllframe, text="Link-Layer Settings", font=("Helvetica", 8, "bold"))
+		self.ifprofllheader.grid(row=0, column=0, columnspan=2)
+		self.ifprof1gvar = tk.IntVar(value=1)
+		self.ifprof1g = tk.Checkbutton(self.ifprofllframe, text="1 Gigabit Auto", 
+		variable=self.ifprof1gvar, command= lambda: self.disable_entry(self.ifprof1gentry, self.ifprof1gvar))
+		self.ifprof1g.grid(row=1, column=0)
+		self.ifprof1gentry = tk.Entry(self.ifprofllframe, bd=1, width=15)
+		self.ifprof1gentry.grid(row=2, column=0)
+		self.ifprof1gentry.insert(tk.END, '1G-Auto')
+		self.ifprof10gvar = tk.IntVar(value=1)
+		self.ifprof10g = tk.Checkbutton(self.ifprofllframe, text="10 Gigabit", 
+		variable=self.ifprof10gvar, command= lambda: self.disable_entry(self.ifprof10gentry, self.ifprof10gvar))
+		self.ifprof10g.grid(row=1, column=1)
+		self.ifprof10gentry = tk.Entry(self.ifprofllframe, bd=1, width=15)
+		self.ifprof10gentry.grid(row=2, column=1)
+		self.ifprof10gentry.insert(tk.END, '10G')
+		######
+		self.ifprofpcframe = tk.Frame(self.ifprofframe, borderwidth=1, relief=tk.SUNKEN)
+		self.ifprofpcframe.grid(row=1, column=2, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.ifprofpcframe.grid_columnconfigure(0, weight=1)
+		self.ifprofpcheader = tk.Label(self.ifprofpcframe, text="Port-Channel Profiles", font=("Helvetica", 8, "bold"))
+		self.ifprofpcheader.grid(row=0, column=0, columnspan=2)
+		self.ifproflacpvar = tk.IntVar(value=1)
+		self.ifproflacp = tk.Checkbutton(self.ifprofpcframe, text="LACP Active", 
+		variable=self.ifproflacpvar, command= lambda: self.disable_entry(self.ifproflacpentry, self.ifproflacpvar))
+		self.ifproflacp.grid(row=1, column=0)
+		self.ifproflacpentry = tk.Entry(self.ifprofpcframe, bd=1, width=15)
+		self.ifproflacpentry.grid(row=2, column=0)
+		self.ifproflacpentry.insert(tk.END, 'LACP-Active')
+		self.ifprofstatvar = tk.IntVar(value=1)
+		self.ifprofstat = tk.Checkbutton(self.ifprofpcframe, text="Static On", 
+		variable=self.ifprofstatvar, command= lambda: self.disable_entry(self.ifprofstatentry, self.ifprofstatvar))
+		self.ifprofstat.grid(row=1, column=1)
+		self.ifprofstatentry = tk.Entry(self.ifprofpcframe, bd=1, width=15)
+		self.ifprofstatentry.grid(row=2, column=1)
+		self.ifprofstatentry.insert(tk.END, 'Static-On')
+		self.ifprofmacvar = tk.IntVar(value=1)
+		self.ifprofmac = tk.Checkbutton(self.ifprofpcframe, text="MAC Pinning", 
+		variable=self.ifprofmacvar, command= lambda: self.disable_entry(self.ifprofmacentry, self.ifprofmacvar))
+		self.ifprofmac.grid(row=3, column=0, columnspan=2)
+		self.ifprofmacentry = tk.Entry(self.ifprofpcframe, bd=1, width=15)
+		self.ifprofmacentry.grid(row=4, column=0, columnspan=2)
+		self.ifprofmacentry.insert(tk.END, 'MAC-Pinning')
+		######
+		self.ifprofsubframe = tk.Frame(self.ifprofframe, borderwidth=1, relief=tk.SUNKEN)
+		self.ifprofsubframe.grid(row=2, column=1, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.ifprofsubframe.grid_columnconfigure(1, weight=1)
+		self.ifprofsubmit = tk.Button(self.ifprofsubframe, text='Add Selected Interface Profiles', command=self.submit_if_profiles)
+		self.ifprofsubmit.grid(row=0, column=0)
+		self.ifprofchecktext = tk.StringVar()
+		self.ifprofchecktext.set("")
+		self.ifprofchecklabel = tk.Label(self.ifprofsubframe, textvariable=self.ifprofchecktext)
+		self.ifprofchecklabel.grid(row=0, column=1, sticky=tk.W)
+		##########################
+		######## AAEPs ########
+		self.aaepframe = tk.Frame(self.bw, borderwidth=4, relief=tk.RAISED)
+		self.aaepframe.grid(row=25, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.aaepframe.grid_columnconfigure(1, weight=1)
+		self.aaepheadframe = tk.Frame(self.aaepframe)
+		self.aaepheadframe.grid(row=0, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.aaepheadframe.grid_columnconfigure(0, weight=1)
+		self.aaepheader = tk.Label(self.aaepheadframe, text="Step 6: Create Attachable Access Entity Profiles (AAEPs)", font=("Helvetica", 12, "bold"))
+		self.aaepheader.grid(row=0, column=0)
+		######
+		self.aaepvlanframe = tk.Frame(self.aaepframe, borderwidth=1, relief=tk.SUNKEN)
+		self.aaepvlanframe.grid(row=1, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.aaepvlanframe.grid_columnconfigure(3, weight=1)
+		#self.aaepvlanheader = tk.Label(self.aaepvlanframe, text="VLAN Pool (Static)", font=("Helvetica", 8, "bold"))
+		#self.aaepvlanheader.grid(row=0, column=0, columnspan=2)
+		self.aaepvlanheadervar = tk.IntVar(value=1)
+		self.aaepvlanheader = tk.Checkbutton(self.aaepvlanframe, text="VLAN Pool (Static)", variable=self.aaepvlanheadervar, font=("Helvetica", 8, "bold"), command= lambda: self.aaep_frame_control())
+		self.aaepvlanheader.grid(row=0, column=0, columnspan=2)
+		self.aaepvlanpoollabel = tk.Label(self.aaepvlanframe, text="VLAN Pool Name")
+		self.aaepvlanpoollabel.grid(row=1, column=0)
+		self.aaepvlanpoolentry = tk.Entry(self.aaepvlanframe, bd=1, width=15)
+		self.aaepvlanpoolentry.grid(row=1, column=1)
+		self.aaepvlanpoolentry.insert(tk.END, 'phys-static')
+		self.aaepvlanrangeframe = tk.Frame(self.aaepvlanframe)
+		self.aaepvlanrangeframe.grid(row=2, column=0, columnspan=4, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.aaepvlanrangeframe.grid_columnconfigure(3, weight=1)
+		self.aaepvlanrangelabel = tk.Label(self.aaepvlanrangeframe, text="VLAN Range  ")
+		self.aaepvlanrangelabel.grid(row=0, column=0)
+		self.aaepvlanstartentry = tk.Entry(self.aaepvlanrangeframe, bd=1, width=7)
+		self.aaepvlanstartentry.grid(row=0, column=1)
+		self.aaepvlanstartentry.insert(tk.END, '1')
+		self.aaepvlanrangedashlabel = tk.Label(self.aaepvlanrangeframe, text=" -")
+		self.aaepvlanrangedashlabel.grid(row=0, column=2)
+		self.aaepvlanendentry = tk.Entry(self.aaepvlanrangeframe, bd=1, width=7)
+		self.aaepvlanendentry.grid(row=0, column=3)
+		self.aaepvlanendentry.insert(tk.END, '2000')
+		#self.aaepvlanrangedstatus = tk.Label(self.aaepvlanrangeframe, text="status")
+		self.aaepvlanrangedstatusvar = tk.StringVar()
+		self.aaepvlanrangedstatusvar.set("")
+		self.aaepvlanrangedstatus = tk.Label(self.aaepvlanrangeframe, textvariable=self.aaepvlanrangedstatusvar)
+		self.aaepvlanrangedstatus.grid(row=1, column=0, columnspan=4)
+		######
+		self.aaepaaepframe = tk.Frame(self.aaepframe, borderwidth=1, relief=tk.SUNKEN)
+		self.aaepaaepframe.grid(row=1, column=1, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.aaepaaepframe.grid_columnconfigure(3, weight=1)
+		#self.aaepaaepheader = tk.Label(self.aaepaaepframe, text="AAE Profile", font=("Helvetica", 8, "bold"))
+		#self.aaepaaepheader.grid(row=0, column=0, columnspan=2)
+		self.aaepaaepheadervar = tk.IntVar(value=1)
+		self.aaepaaepheader = tk.Checkbutton(self.aaepaaepframe, text="AAEP Profile", variable=self.aaepaaepheadervar, font=("Helvetica", 8, "bold"), command= lambda: self.aaep_frame_control())
+		self.aaepaaepheader.grid(row=0, column=0, columnspan=2)
+		self.aaepaaeplabel = tk.Label(self.aaepaaepframe, text="Profile Name")
+		self.aaepaaeplabel.grid(row=1, column=0)
+		self.aaepaaepentry = tk.Entry(self.aaepaaepframe, bd=1, width=15)
+		self.aaepaaepentry.grid(row=1, column=1)
+		self.aaepaaepentry.insert(tk.END, 'phys')
+		self.aaepaaepinfravar = tk.IntVar()
+		self.aaepaaepinfrabox = tk.Checkbutton(self.aaepaaepframe, text="Enable Infrastructure VLAN", variable=self.aaepaaepinfravar)
+		self.aaepaaepinfrabox.grid(row=2, column=0, columnspan=2)
+		######
+		self.aaepphysdomframe = tk.Frame(self.aaepframe, borderwidth=1, relief=tk.SUNKEN)
+		self.aaepphysdomframe.grid(row=1, column=2, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.aaepphysdomframe.grid_columnconfigure(3, weight=1)
+		#self.aaepphysdomheader = tk.Label(self.aaepphysdomframe, text="Physical Domain", font=("Helvetica", 8, "bold"))
+		#self.aaepphysdomheader.grid(row=0, column=0, columnspan=2)
+		self.aaepphysdomheadervar = tk.IntVar(value=1)
+		self.aaepphysdomheader = tk.Checkbutton(self.aaepphysdomframe, text="Physical Domain", variable=self.aaepphysdomheadervar, font=("Helvetica", 8, "bold"), command= lambda: self.aaep_frame_control())
+		self.aaepphysdomheader.grid(row=0, column=0, columnspan=2)
+		self.aaepphysdomlabel = tk.Label(self.aaepphysdomframe, text="Physical Domain Name")
+		self.aaepphysdomlabel.grid(row=1, column=0)
+		self.aaepphysdomentry = tk.Entry(self.aaepphysdomframe, bd=1, width=15)
+		self.aaepphysdomentry.grid(row=1, column=1)
+		self.aaepphysdomentry.insert(tk.END, 'phys')
+		self.aaepphysdomassvar = tk.IntVar(value=1)
+		self.aaepphysdomassbox = tk.Checkbutton(self.aaepphysdomframe, text="Associate VLAN Pool and AAEP to Physical Domain", variable=self.aaepphysdomassvar, command= lambda: self.aaep_frame_control())
+		self.aaepphysdomassbox.grid(row=2, column=0, columnspan=2)
+		######
+		self.aaepsubframe = tk.Frame(self.aaepframe, borderwidth=1, relief=tk.SUNKEN)
+		self.aaepsubframe.grid(row=2, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.aaepsubframe.grid_columnconfigure(3, weight=1)
+		self.aaepsubmit = tk.Button(self.aaepsubframe, text='Submit AAEP', command=self.submit_aaep)
+		self.aaepsubmit.grid(row=0, column=0)
+		self.aaepchecktext = tk.StringVar()
+		self.aaepchecktext.set("")
+		self.aaepchecklabel = tk.Label(self.aaepsubframe, textvariable=self.aaepchecktext)
+		self.aaepchecklabel.grid(row=0, column=1, sticky=tk.W)
 		#######################
 		######## CLOSE ########
 		self.closebutton = tk.Button(self.bw, text='Close', command=self.close)
@@ -559,6 +770,23 @@ class basicwindow:
 				nodes.update({atts['id']: atts})
 				index += 1
 			return nodes
+	def submit_pod_prof(self):
+		if gui.login_check():
+			self.podproftext.set("Attempting Post...")
+			gui.write_output("\n\n\n"+gui.header(35, "Pushing Pod Policy Assignment", 2))
+			self.pushdatatup = assign_pod_profile()
+			self.pushurl = gui.call.baseurl+self.pushdatatup[0]
+			self.pushdata = self.pushdatatup[1]
+			gui.write_send_header_body(self.pushurl, self.pushdata)
+			self.response = gui.post(url=self.pushurl, data=self.pushdata)
+			gui.write_response_header_body(self.response)
+			if self.response.getcode() == 200:
+				self.podproftext.set("Success: HTTP 200")
+				self.podproflabel.configure(fg="green4")
+			else:
+				self.podproftext.set("Post Failed")
+				self.podproflabel.configure(fg="red")
+			gui.write_output(gui.header(35, "Pod Assignment Push Complete", 2))
 	def submit_rr_node(self):
 		if "select" not in self.bgprrmenu.get().lower():
 			if gui.login_check():
@@ -585,13 +813,218 @@ class basicwindow:
 		else:
 			self.bgprrstatustext.set("Bad Selection")
 			self.bgprrstatuslabel.configure(fg="red")
+	def disable_entry(self, entryobj, checkboxobj):
+		if checkboxobj.get() == 0:
+			entryobj.config(state='disabled')
+		elif checkboxobj.get() == 1:
+			entryobj.config(state='normal')
+	def compile_if_profiles(self):
+		checkobjlist = [self.ifprofcdpenvar, self.ifprofcdpdisvar, 
+		self.ifproflldpenvar, self.ifproflldpdisvar, self.ifprof1gvar, 
+		self.ifprof10gvar, self.ifproflacpvar, self.ifprofstatvar, self.ifprofmacvar]
+		####
+		nameobjlist = [self.ifprofcdpenentry, self.ifprofcdpdisentry, 
+		self.ifproflldpenentry, self.ifproflldpdisentry, self.ifprof1gentry, 
+		self.ifprof10gentry, self.ifproflacpentry, self.ifprofstatentry, self.ifprofmacentry]
+		####
+		methlist = [ifprof_cdp_enabled(self.ifprofcdpenentry.get()), 
+		ifprof_cdp_disabled(self.ifprofcdpdisentry.get()), 
+		ifprof_lldp_enabled(self.ifproflldpenentry.get()), 
+		ifprof_lldp_disabled(self.ifproflldpdisentry.get()), 
+		ifprof_1g(self.ifprof1gentry.get()), 
+		ifprof_10g(self.ifprof10gentry.get()), 
+		ifprof_lacp(self.ifproflacpentry.get()), 
+		ifprof_static(self.ifprofstatentry.get()), 
+		ifprof_mac(self.ifprofmacentry.get())]
+		####
+		self.ifprofreportobjlist = [self.ifprofcdpen, self.ifprofcdpdis, 
+		self.ifproflldpen, self.ifproflldpdis, self.ifprof1g, 
+		self.ifprof10g, self.ifproflacp, self.ifprofstat, self.ifprofmac]
+		index = 0
+		postlist = []
+		status = "good"
+		for obj in checkobjlist:
+			if obj.get() == 1:
+				if nameobjlist[index].get() == "":
+					nameobjlist[index].configure(bg="yellow")
+					status = "empty"
+				elif check_aciobjname_entry(nameobjlist[index]) == False:
+					nameobjlist[index].configure(bg="red")
+					status = "badinput"
+				postlist.append([methlist[index], self.ifprofreportobjlist[index]])
+			index += 1
+		if status == "good":
+			return postlist
+		else:
+			return status
+	def submit_if_profiles(self):
+		plist = self.compile_if_profiles()
+		for entry in self.ifprofreportobjlist:
+			entry.configure(fg="black")
+		if plist == "empty":
+			self.ifprofchecktext.set("Profile Names Cannot be Empty")
+			self.ifprofchecklabel.configure(fg="red")
+		elif plist == "badinput":
+			self.ifprofchecktext.set("Illegal Profile Name. Allowed Characters are a-z A-Z 0-9 - _ :")
+			self.ifprofchecklabel.configure(fg="red")
+		elif plist != []:
+			if gui.login_check():
+				self.ifprofchecktext.set("Attempting Post...")
+				gui.write_output("\n\n\n"+gui.header(35, "Pushing Interface Profiles", 2))
+				resultlist = []
+				for push in plist:
+					gui.write_output("\n"+gui.header(35, push[0][2], 1))
+					pushurl = gui.call.baseurl+push[0][0]
+					gui.write_send_header_body(pushurl, push[0][1])
+					response = gui.post(url=pushurl, data=push[0][1])
+					resultlist.append([response.getcode(), push[1]])
+					gui.write_response_header_body(response)
+				goodpush = True
+				for code in resultlist:
+					if code[0] != 200:
+						goodpush = False
+						code[1].configure(fg="red")
+					elif code[0] == 200:
+						code[1].configure(fg="green4")
+				if goodpush:
+					self.ifprofchecktext.set("Success: HTTP 200")
+					self.ifprofchecklabel.configure(fg="green4")
+				else:
+					self.ifprofchecktext.set("Issues Encountered, See Logs")
+					self.ifprofchecklabel.configure(fg="red")
+		else:
+			self.ifprofchecktext.set("Must Select at Least One Profile")
+			self.ifprofchecklabel.configure(fg="red")
+	def aaep_frame_control(self):
+		calling = inspect.stack()[1][4][0].replace("\t", "")
+		calling = calling.split(" ")[0]
+		if calling == "self.aaepphysdomassbox":
+			if self.aaepphysdomassvar.get() == 1:
+				self.aaepvlanheadervar.set(value=1)
+				self.aaepaaepheadervar.set(value=1)
+		####
+		if self.aaepvlanheadervar.get() == 0:
+			self.aaepvlanpoolentry.config(state='disabled')
+			self.aaepvlanstartentry.config(state='disabled')
+			self.aaepvlanendentry.config(state='disabled')
+			if calling == "self.aaepvlanheader":
+				self.aaepphysdomassvar.set(value=0)
+		elif self.aaepvlanheadervar.get() == 1:
+			self.aaepvlanpoolentry.config(state='normal')
+			self.aaepvlanstartentry.config(state='normal')
+			self.aaepvlanendentry.config(state='normal')
+		####
+		if self.aaepaaepheadervar.get() == 0:
+			self.aaepaaepentry.config(state='disabled')
+			self.aaepaaepinfrabox.config(state='disabled')
+			if calling == "self.aaepaaepheader":
+				self.aaepphysdomassvar.set(value=0)
+		elif self.aaepaaepheadervar.get() == 1:
+			self.aaepaaepentry.config(state='normal')
+			self.aaepaaepinfrabox.config(state='normal')
+		####
+		if self.aaepphysdomheadervar.get() == 0:
+			self.aaepphysdomentry.config(state='disabled')
+			self.aaepphysdomassbox.config(state='disabled')
+		elif self.aaepphysdomheadervar.get() == 1:
+			self.aaepphysdomentry.config(state='normal')
+			self.aaepphysdomassbox.config(state='normal')
+	def check_aaep_frame(self):
+		checkobjlist = [self.aaepvlanheadervar, self.aaepaaepheadervar, 
+		self.aaepphysdomheadervar]
+		####
+		nameobjlist = [self.aaepvlanpoolentry, self.aaepaaepentry, 
+		self.aaepphysdomentry]
+		####
+		methlist = [create_vlan_pool(self.aaepvlanpoolentry.get(), self.aaepvlanstartentry.get(), self.aaepvlanendentry.get()), create_aaep(self.aaepaaepentry.get(), self.aaepaaepinfravar.get()), create_physical_domain(self.aaepphysdomentry.get())]
+		####
+		self.aaepreportobjlist = [self.aaepvlanheader, 
+		self.aaepaaepheader, self.aaepphysdomheader]
+		index = 0
+		postlist = []
+		status = "good"
+		for obj in checkobjlist:
+			if obj.get() == 1:
+				if nameobjlist[index].get() == "":
+					nameobjlist[index].configure(bg="yellow")
+					status = "empty"
+				elif check_aciobjname_entry(nameobjlist[index]) == False:
+					nameobjlist[index].configure(bg="red")
+					status = "badinput"
+				postlist.append([methlist[index], self.aaepreportobjlist[index]])
+			index += 1
+		if check_vlan_id(self.aaepvlanstartentry, 
+		self.aaepvlanrangedstatus, self.aaepvlanrangedstatusvar) == False:
+			status = "badvlan"
+		if check_vlan_id(self.aaepvlanendentry, 
+		self.aaepvlanrangedstatus, self.aaepvlanrangedstatusvar) == False:
+			status = "badvlan"
+		###############
+		if self.aaepvlanheadervar.get() == 1 and self.aaepaaepheadervar.get() == 1 and self.aaepphysdomheadervar.get() == 1:
+			if self.aaepphysdomassvar.get()==1:
+				assopost1 = associate_pd_aaep(self.aaepaaepentry.get(), 
+				self.aaepphysdomentry.get())
+				assopost2 = associate_pd_vlanp(self.aaepvlanpoolentry.get(), 
+				self.aaepphysdomentry.get())
+				postlist.append([assopost1, self.aaepphysdomassbox])
+				postlist.append([assopost2, self.aaepphysdomassbox])
+		###############
+		if status == "good":
+			return postlist
+		else:
+			return status
+	def submit_aaep(self):
+		self.aaepchecktext.set("")
+		self.aaepchecklabel.configure(fg="black")
+		plist = self.check_aaep_frame()
+		for entry in self.aaepreportobjlist:
+			entry.configure(fg="black")
+		if plist == "empty":
+			self.aaepchecktext.set("Profile Names Cannot be Empty")
+			self.aaepchecklabel.configure(fg="red")
+		elif plist == "badinput":
+			self.aaepchecktext.set("Illegal Profile Name. Allowed Characters are a-z A-Z 0-9 - _ :")
+			self.aaepchecklabel.configure(fg="red")
+		elif plist == "badvlan":
+			self.aaepchecktext.set("Bad VLAN ID")
+			self.aaepchecklabel.configure(fg="red")
+		elif plist == []:
+			self.aaepchecktext.set("Nothing To Do")
+			self.aaepchecklabel.configure(fg="yellow")
+		else:
+			if gui.login_check():
+				self.aaepchecktext.set("Attempting Post...")
+				gui.write_output("\n\n\n"+gui.header(35, "Pushing AAEP Settings", 2))
+				resultlist = []
+				for push in plist:
+					gui.write_output("\n"+gui.header(35, push[0][2], 1))
+					pushurl = gui.call.baseurl+push[0][0]
+					gui.write_send_header_body(pushurl, push[0][1])
+					response = gui.post(url=pushurl, data=push[0][1])
+					resultlist.append([response.getcode(), push[1]])
+					gui.write_response_header_body(response)
+				goodpush = True
+				for code in resultlist:
+					if code[0] != 200:
+						goodpush = False
+						code[1].configure(fg="red")
+					elif code[0] == 200:
+						code[1].configure(fg="green4")
+				#########
+				if goodpush:
+					self.aaepchecktext.set("Success: HTTP 200")
+					self.aaepchecklabel.configure(fg="green4")
+				else:
+					self.aaepchecktext.set("Issues Encountered, See Logs")
+					self.aaepchecklabel.configure(fg="red")
 	def close(self):
 		gui.bwopen = False
 		self.bw.destroy()
 
 
-
-
+			
+			
+			
 #####################################3
 def check_ipdns_entry(entryobj, labelobj, textobj):
 	textobj.set("")
@@ -666,6 +1099,20 @@ def check_bgpasn_entry(entryobj, labelobj, textobj):
 			labelobj.configure(fg="red")
 			return False
 
+def check_aciobjname_entry(entryobj):
+	entryobj.configure(bg="white")
+	if entry_is_empty(entryobj):
+		return False
+	else:
+		characterregex = "^[a-zA-Z0-9\-\.\_\:]+$"
+		result = False
+		for entry in re.findall(characterregex, entryobj.get()):
+			if entry == entryobj.get():
+				result = True
+		if result == False:
+			entryobj.configure(bg="red")
+		return result
+
 def entry_is_empty(entryobj):
 	entryobj.configure(bg="white")
 	if entryobj.get() == "":
@@ -673,6 +1120,26 @@ def entry_is_empty(entryobj):
 		return True
 	else:
 		return False
+
+def check_vlan_id(entryobj, labelobj, textobj):
+	textobj.set("")
+	if entry_is_empty(entryobj):
+		return False
+	else:
+		try:
+			vlanid = int(entryobj.get())
+			if vlanid > 0 and vlanid < 4095:
+				return True
+			else:
+				entryobj.configure(bg="red")
+				textobj.set("Must be Between 1 and 4094")
+				labelobj.configure(fg="red")
+				return False
+		except ValueError:
+			entryobj.configure(bg="red")
+			textobj.set("Must be Between 1 and 4094")
+			labelobj.configure(fg="red")
+			return False
 
 ########################################################
 class acicalls:
@@ -731,6 +1198,7 @@ def check_domainname(domainname):
 	result = {"status": "pass", "messages": []} # Start with a passing result
 	##### 1. Check that only legal characters are in name (RFC883 and RFC952) #####
 	characterregex = "^[a-zA-Z0-9\-\.]+$" # A list of the valid domain-name characters in a domain name
+	charactercheck = "fail" # Set initial charactercheck result to fail. Pass only if check clears
 	for entry in re.findall(characterregex, domainname): # For each string in the list returned by re.findall
 		if entry == domainname: # If one of the strings in the returned list equals the full domainname string
 			charactercheck = "pass" # Then all its characters are legal and it passes the check
@@ -850,7 +1318,7 @@ def add_ntp(ntp_hostname, ntp_preferred):
 		ntp_preferred_value = "true"
 	elif ntp_preferred == 0:
 		ntp_preferred_value = "false"
-	###NTP JSON Data###
+	###JSON Data###
 	data = {
   "datetimeNtpProv": {
     "attributes": {
@@ -883,7 +1351,7 @@ def add_dns_server(dns_address, dns_preferred):
 		dns_preferred_value = "true"
 	elif dns_preferred == 0:
 		dns_preferred_value = "false"
-	###NTP JSON Data###
+	###JSON Data###
 	data = {
   "dnsProv": {
     "attributes": {
@@ -905,7 +1373,7 @@ def add_dns_domain(dns_domain, default_domain):
 		default_domain_value = "true"
 	elif default_domain == 0:
 		default_domain_value = "false"
-	###NTP JSON Data###
+	###JSON Data###
 	data = {
   "dnsDomain": {
     "attributes": {
@@ -924,7 +1392,7 @@ def add_dns_domain(dns_domain, default_domain):
 
 
 def assign_dns_to_oob():
-	###NTP JSON Data###
+	###JSON Data###
 	data = {
   "dnsRsProfileToEpg": {
     "attributes": {
@@ -939,8 +1407,24 @@ def assign_dns_to_oob():
 	return (uri, data)
 
 
+def assign_pod_profile():
+	###JSON Data###
+	data = {
+  "fabricRsPodPGrp": {
+    "attributes": {
+      "tDn": "uni/fabric/funcprof/podpgrp-default",
+      "status": "created,modified"
+    },
+    "children": []
+  }
+}
+	###################
+	uri = "/api/node/mo/uni/fabric/podprof-default/pods-default-typ-ALL/rspodPGrp.json"
+	return (uri, data)
+
+
 def assign_bgp_asn(bgp_asn):
-	###NTP JSON Data###
+	###JSON Data###
 	data = {
   "bgpAsP": {
     "attributes": {
@@ -958,7 +1442,7 @@ def assign_bgp_asn(bgp_asn):
 
 
 def assign_bgp_rr(bgp_rr_nodeid):
-	###NTP JSON Data###
+	###JSON Data###
 	data = {
   "bgpRRNodePEp": {
     "attributes": {
@@ -973,6 +1457,352 @@ def assign_bgp_rr(bgp_rr_nodeid):
 	###################
 	uri = "/api/node/mo/uni/fabric/bgpInstP-default/rr/node-"+bgp_rr_nodeid+".json"
 	return (uri, data)
+
+
+########################## Interface Profiles ##########################
+def ifprof_cdp_enabled(name):
+	###JSON Data###
+	data = {
+  "cdpIfPol": {
+    "attributes": {
+      "dn": "uni/infra/cdpIfP-"+name,
+      "name": name,
+      "adminSt": "enabled",
+      "rn": "cdpIfP-"+name,
+      "status": "created,modified"
+    },
+    "children": []
+  }
+}
+	###################
+	uri = "/api/node/mo/uni/infra/cdpIfP-"+name+".json"
+	desc = "CDP Enabled"
+	return (uri, data, desc)
+
+def ifprof_cdp_disabled(name):
+	###JSON Data###
+	data = {
+  "cdpIfPol": {
+    "attributes": {
+      "dn": "uni/infra/cdpIfP-"+name,
+      "name": name,
+      "adminSt": "disabled",
+      "rn": "cdpIfP-"+name,
+      "status": "created,modified"
+    },
+    "children": []
+  }
+}
+	###################
+	uri = "/api/node/mo/uni/infra/cdpIfP-"+name+".json"
+	desc = "CDP Disabled"
+	return (uri, data, desc)
+
+def ifprof_lldp_enabled(name):
+	###JSON Data###
+	data = {
+  "lldpIfPol": {
+    "attributes": {
+      "dn": "uni/infra/lldpIfP-"+name,
+      "name": name,
+      "adminRxSt": "enabled",
+      "adminTxSt": "enabled",
+      "rn": "lldpIfP-"+name,
+      "status": "created,modified"
+    },
+    "children": []
+  }
+}
+	###################
+	uri = "/api/node/mo/uni/infra/lldpIfP-"+name+".json"
+	desc = "LLDP Enabled"
+	return (uri, data, desc)
+
+def ifprof_lldp_disabled(name):
+	###JSON Data###
+	data = {
+  "lldpIfPol": {
+    "attributes": {
+      "dn": "uni/infra/lldpIfP-"+name,
+      "name": name,
+      "adminRxSt": "disabled",
+      "adminTxSt": "disabled",
+      "rn": "lldpIfP-"+name,
+      "status": "created,modified"
+    },
+    "children": []
+  }
+}
+	###################
+	uri = "/api/node/mo/uni/infra/lldpIfP-"+name+".json"
+	desc = "LLDP Disabled"
+	return (uri, data, desc)
+
+def ifprof_1g(name):
+	###JSON Data###
+	data = {
+  "fabricHIfPol": {
+    "attributes": {
+      "dn": "uni/infra/hintfpol-"+name,
+      "name": name,
+      "rn": "hintfpol-"+name,
+      "speed": "1G",
+      "status": "created"
+    },
+    "children": []
+  }
+}
+	###################
+	uri = "/api/node/mo/uni/infra/hintfpol-"+name+".json"
+	desc = "1 Gigabit Auto"
+	return (uri, data, desc)
+
+def ifprof_10g(name):
+	###JSON Data###
+	data = {
+  "fabricHIfPol": {
+    "attributes": {
+      "dn": "uni/infra/hintfpol-"+name,
+      "name": name,
+      "rn": "hintfpol-"+name,
+      "speed": "10G",
+      "status": "created"
+    },
+    "children": []
+  }
+}
+	###################
+	uri = "/api/node/mo/uni/infra/hintfpol-"+name+".json"
+	desc = "10 Gigabit"
+	return (uri, data, desc)
+
+def ifprof_lacp(name):
+	###JSON Data###
+	data = {
+  "lacpLagPol": {
+    "attributes": {
+      "dn": "uni/infra/lacplagp-"+name,
+      "ctrl": "fast-sel-hot-stdby,graceful-conv,susp-individual",
+      "name": name,
+      "mode": "active",
+      "rn": "lacplagp-"+name,
+      "status": "created,modified"
+    },
+    "children": []
+  }
+}
+	###################
+	uri = "/api/node/mo/uni/infra/lacplagp-"+name+".json"
+	desc = "LACP Active"
+	return (uri, data, desc)
+
+def ifprof_static(name):
+	###JSON Data###
+	data = {
+  "lacpLagPol": {
+    "attributes": {
+      "dn": "uni/infra/lacplagp-"+name,
+      "ctrl": "fast-sel-hot-stdby,graceful-conv,susp-individual",
+      "name": name,
+      "rn": "lacplagp-"+name,
+      "status": "created,modified"
+    },
+    "children": []
+  }
+}
+	###################
+	uri = "/api/node/mo/uni/infra/lacplagp-"+name+".json"
+	desc = "Static On"
+	return (uri, data, desc)
+
+def ifprof_mac(name):
+	###JSON Data###
+	data = {
+  "lacpLagPol": {
+    "attributes": {
+      "dn": "uni/infra/lacplagp-"+name,
+      "ctrl": "fast-sel-hot-stdby,graceful-conv,susp-individual",
+      "name": name,
+      "mode": "mac-pin",
+      "rn": "lacplagp-"+name,
+      "status": "created,modified"
+    },
+    "children": []
+  }
+}
+	###################
+	uri = "/api/node/mo/uni/infra/lacplagp-"+name+".json"
+	desc = "MAC Pinning"
+	return (uri, data, desc)
+
+
+def create_vlan_pool(name, vlanstart, vlanstop):
+	###JSON Data###
+	data = {
+  "fvnsVlanInstP": {
+    "attributes": {
+      "allocMode": "static",
+      "dn": "uni/infra/vlanns-["+name+"]-static",
+      "name": name,
+      "rn": "vlanns-["+name+"]-static",
+      "status": "created"
+    },
+    "children": [
+      {
+        "fvnsEncapBlk": {
+          "attributes": {
+            "dn": "uni/infra/vlanns-["+name+"]-static/from-[vlan-"+vlanstart+"]-to-[vlan-"+vlanstop+"]",
+            "from": "vlan-"+vlanstart+"",
+            "rn": "from-[vlan-"+vlanstart+"]-to-[vlan-"+vlanstop+"]",
+            "status": "created",
+            "to": "vlan-"+vlanstop+""
+          },
+          "children": []
+        }
+      }
+    ]
+  }
+}
+	###################
+	uri = "/api/node/mo/uni/infra/vlanns-["+name+"]-static.json"
+	desc = "VLAN Pool"
+	return (uri, data, desc)
+
+
+def create_aaep(name, infravlanenabled):
+	###JSON Data###
+	infradata = {
+  "infraInfra": {
+    "attributes": {
+      "dn": "uni/infra",
+      "status": "modified"
+    },
+    "children": [
+      {
+        "infraAttEntityP": {
+          "attributes": {
+            "dn": "uni/infra/attentp-"+name,
+            "name": name,
+            "rn": "attentp-"+name,
+            "status": "created"
+          },
+          "children": [
+            {
+              "infraProvAcc": {
+                "attributes": {
+                  "dn": "uni/infra/attentp-"+name+"/provacc",
+                  "status": "created"
+                },
+                "children": []
+              }
+            }
+          ]
+        }
+      },
+      {
+        "infraFuncP": {
+          "attributes": {
+            "dn": "uni/infra/funcprof",
+            "status": "modified"
+          },
+          "children": []
+        }
+      }
+    ]
+  }
+}
+	###################
+	noinfradata = {
+  "infraInfra": {
+    "attributes": {
+      "dn": "uni/infra",
+      "status": "modified"
+    },
+    "children": [
+      {
+        "infraAttEntityP": {
+          "attributes": {
+            "dn": "uni/infra/attentp-"+name,
+            "name": name,
+            "rn": "attentp-"+name,
+            "status": "created"
+          },
+          "children": []
+        }
+      },
+      {
+        "infraFuncP": {
+          "attributes": {
+            "dn": "uni/infra/funcprof",
+            "status": "modified"
+          },
+          "children": []
+        }
+      }
+    ]
+  }
+}
+	###################
+	uri = "/api/node/mo/uni/infra.json"
+	desc = "AAEP"
+	if infravlanenabled == 1:
+		return (uri, infradata, desc)
+	else:
+		return (uri, noinfradata, desc)
+
+
+def create_physical_domain(name):
+	###JSON Data###
+	data = {
+  "physDomP": {
+    "attributes": {
+      "dn": "uni/phys-"+name,
+      "name": name,
+      "rn": "phys-"+name,
+      "status": "created"
+    },
+    "children": []
+  }
+}
+	###################
+	uri = "/api/node/mo/uni/phys-"+name+".json"
+	desc = "Physical Domain"
+	return (uri, data, desc)
+
+
+def associate_pd_aaep(aaepname, pdname):
+	###JSON Data###
+	data = {
+  "infraRsDomP": {
+    "attributes": {
+      "status": "created",
+      "tDn": "uni/phys-"+pdname
+    },
+    "children": []
+  }
+}
+	###################
+	uri = "/api/node/mo/uni/infra/attentp-"+aaepname+".json"
+	desc = "Physical Domain \\ AAEP Association"
+	return (uri, data, desc)
+
+
+def associate_pd_vlanp(vlanpname, pdname):
+	###JSON Data###
+	data = {
+  "infraRsVlanNs": {
+    "attributes": {
+      "status": "created",
+      "tDn": "uni/infra/vlanns-["+vlanpname+"]-static"
+    },
+    "children": []
+  }
+}
+	###################
+	uri = "/api/node/mo/uni/phys-"+pdname+"/rsvlanNs.json"
+	desc = "Physical Domain \\ VLAN Pool Association"
+	return (uri, data, desc)
+
 
 
 
