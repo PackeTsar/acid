@@ -1,4 +1,18 @@
+#!/usr/bin/python
 
+#####           Acid ACI Editor            #####
+#####       Written by John W Kerns        #####
+#####      http://blog.packetsar.com       #####
+#####  https://github.com/PackeTsar/acid   #####
+
+#### All code will work with Python 2.7.X+ and 3.6.X+ ####
+#### All imported libraries are native to (included in) Python 2.7.X+ and 3.6.X+ ####
+
+# Set some global variables here
+version = "0.5.0"
+
+
+# Import libraries with names common to Python2 and Python3
 import re
 import ssl
 import json
@@ -6,6 +20,7 @@ import urllib
 import inspect
 import webbrowser
 
+# Import libraries with names unique Python2 and Python3
 try:
 	# Python3 URL Libraries
 	from urllib.request import urlopen
@@ -17,7 +32,6 @@ try:
 	from urllib.request import HTTPCookieProcessor
 	from urllib.request import HTTPSHandler
 	# Python3 GUI Libraries
-	#from tkinter import *
 	import tkinter as tk
 	from tkinter import ttk
 except ImportError:
@@ -31,15 +45,13 @@ except ImportError:
 	from urllib2 import HTTPCookieProcessor
 	from urllib2 import HTTPSHandler
 	# Python2 GUI Libraries
-	#from Tkinter import *
 	import Tkinter as tk
 	from tkinter import ttk
 
-version = "0.4.0"
 
+#### Initial GUI Window with Credentials, Log Output, and buttons for child windows ####
 class topwindow:
 	def __init__(self, master):
-		self.currentoutput = ""
 		self.master = master
 		master.title("Acid")
 		self.viewpasswordstate = False
@@ -49,6 +61,10 @@ class topwindow:
 		master.tk.call('wm','iconphoto',self.master._w,self.logo)
 		self.logolabel.grid(row=0, column=0, rowspan=4, sticky=tk.W+tk.N)
 		####################
+		master.grid_columnconfigure(0, weight=1)
+		master.grid_columnconfigure(1, weight=1)
+		master.grid_rowconfigure(6, weight=1)
+		####################
 		self.ipaddresslabel = tk.Label(master, text="Hostname or IP Address")
 		self.ipaddresslabel.grid(row=0, column=1, sticky=tk.E)
 		#########
@@ -57,7 +73,7 @@ class topwindow:
 		####################
 		#self.ipoutput = ""
 		self.ipoutputtext = tk.StringVar()
-		self.ipoutputtext.set(self.currentoutput)
+		self.ipoutputtext.set("")
 		self.ipoutputlabel = tk.Label(master, textvariable=self.ipoutputtext)
 		self.ipoutputlabel.grid(row=1, column=2)
 		####################
@@ -75,17 +91,14 @@ class topwindow:
 		self.passwordentry = tk.Entry(master, show="*", bd=5, width=35)
 		self.passwordentry.grid(row=3, column=2)
 		#########
-		#self.passint = tk.IntVar()
-		#self.passcheck = tk.Checkbutton(master, text="View Password", variable=self.passint).grid(row=3, column=3, sticky=tk.W)
 		self.viewpassbutton = tk.Button(master, text='View Password', command=self.view_password)
 		self.viewpassbutton.grid(row=3, column=3)
 		####################
 		self.clearlogbutton = tk.Button(master, text='Clear Log Window', command=self.clear_output)
 		self.clearlogbutton.grid(row=4, column=0, sticky=tk.W)
 		####################
-		self.currentoutput = ""
 		self.outputtext = tk.StringVar()
-		self.outputtext.set(self.currentoutput)
+		self.outputtext.set("")
 		self.outputlabel = tk.Label(master, textvariable=self.outputtext, wraplength=400)
 		self.outputlabel.grid(row=4, column=1, columnspan=2, rowspan=2)
 		####################
@@ -98,14 +111,15 @@ class topwindow:
 		self.closebutton = tk.Button(master, text='Close', command=self.close)
 		self.closebutton.grid(row=4, column=3)
 		####################
-		self.scrollbar = tk.Scrollbar(master)
-		self.textbox = tk.Text(master, height=30, width=150, bg="white smoke", yscrollcommand=self.scrollbar.set)
+		self.textboxframe = tk.Frame(master, borderwidth=4, relief=tk.RAISED)
+		self.textboxframe.grid(row=6, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.textboxframe.grid_columnconfigure(0, weight=1)
+		self.textboxframe.grid_rowconfigure(0, weight=1)
+		self.scrollbar = tk.Scrollbar(self.textboxframe)
+		self.textbox = tk.Text(self.textboxframe, height=10, width=75, bg="white smoke", yscrollcommand=self.scrollbar.set)
 		self.scrollbar.config(command=self.textbox.yview)
-		self.textbox.grid(row=6, column=0, columnspan=5)
-		self.scrollbar.grid(row=6, column=6,sticky=tk.N+tk.S+tk.W+tk.E)
-		master.grid_columnconfigure(0, weight=1)
-		master.grid_columnconfigure(1, weight=1)
-		master.grid_rowconfigure(6, weight=1)
+		self.textbox.grid(row=0, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.scrollbar.grid(row=0, column=1,sticky=tk.N+tk.S+tk.W+tk.E)
 		self.write_output("Logs and API calls will be listed here")
 		####################
 		self.webframe = tk.Frame(master)
@@ -118,6 +132,14 @@ class topwindow:
 		####################
 		self.versionlabel = tk.Label(master, text=r"Version "+version,)
 		self.versionlabel.grid(row=7, column=4)
+		####################
+		# Uncomment and enter IP, username, and password to auto-populate Acid on start
+		# Makes testing much faster as you don't have to enter creds for every test
+		# Use only for QA and testing. Recomment and reset values before commiting
+		###
+		#self.ipaddressentry.insert(0, "192.168.1.1")
+		#self.usernameentry.insert(0, "admin")
+		#self.passwordentry.insert(0, "admin")
 		####################
 	def _login(self):
 		self.outputtext.set("")
@@ -262,86 +284,182 @@ class topwindow:
 		self.master.destroy()
 
 
+class AutoScrollbar(tk.Scrollbar):
+    # A scrollbar that hides itself if it's not needed.
+    # Only works if you use the grid geometry manager!
+    def set(self, lo, hi):
+        if float(lo) <= 0.0 and float(hi) >= 1.0:
+            # grid_remove is currently missing from Tkinter!
+            self.tk.call("grid", "remove", self)
+        else:
+            self.grid()
+        tk.Scrollbar.set(self, lo, hi)
+    def pack(self, **kw):
+        raise TclError("cannot use pack with this widget")
+    def place(self, **kw):
+        raise TclError("cannot use place with this widget")
+
+#### GUI window used for doing initial, basic, one-time setup ####
 class basicwindow:
 	def __init__(self, master):
-		self.bw = tk.Toplevel(master)
-		self.bw.title("Acid Basic Settings")
-		self.bw.tk.call('wm','iconphoto',self.bw._w,gui.logo)
+		self.basicwindow = tk.Toplevel(master)
+		self.basicwindow.title("Acid Basic Settings")
+		self.basicwindow.geometry('750x450')
+		self.basicwindow.tk.call('wm','iconphoto',self.basicwindow._w,gui.logo)
+		self.bwcanvas = tk.Canvas(self.basicwindow)
+		self.bwcanvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=tk.YES)
+		self.bw = tk.Frame(self.bwcanvas)
+		self.bw.pack(side=tk.LEFT, fill=tk.BOTH, expand=tk.YES)
+		self.bwscroll = tk.Scrollbar(self.basicwindow)
+		self.bwscroll.pack(side=tk.RIGHT, fill='y')
+		self.bwcanvas.configure(yscrollcommand = self.bwscroll.set)
+		self.bwscroll.config(command=self.bwcanvas.yview)
+		self.interior_id = self.bwcanvas.create_window(0, 0, window=self.bw, anchor=tk.N+tk.W)
+		self.bwcanvas.bind('<Configure>', self.on_configure)
+		self.bwcanvas.bind_all("<MouseWheel>", self.on_mousewheel)
+		self.bwcanvas.configure(scrollregion=self.bwcanvas.bbox("all"))
+		self.bwcanvas.itemconfig(self.interior_id, height=self.bw.winfo_vrootheight())
+		#######################
+		######## PREFS ########
+		self.prefsframe = tk.Frame(self.bw, borderwidth=4, relief=tk.RAISED)
+		self.prefsframe.pack(fill=tk.BOTH, expand=tk.YES)
+		self.prefsframe.grid_columnconfigure(0, weight=1)
+		self.prefsheadframe = tk.Frame(self.prefsframe)
+		self.prefsheadframe.grid(row=0, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.prefsheadframe.grid_columnconfigure(0, weight=1)
+		self.prefsheadframe.grid_rowconfigure(0, weight=1)
+		self.prefsheader = tk.Label(self.prefsheadframe, text="Step 0: Set Acid Preferences", font=("Helvetica", 12, "bold"))
+		self.prefsheader.grid(row=0, column=0)
+		######
+		self.prefsoverwriteframe = tk.Frame(self.prefsframe, borderwidth=1, relief=tk.SUNKEN)
+		self.prefsoverwriteframe.grid(row=1, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.prefsoverwriteframe.grid_columnconfigure(0, weight=1)
+		self.prefsoverwriteframe.grid_rowconfigure(0, weight=1)
+		self.prefsoverwriteframe.grid_rowconfigure(1, weight=1)
+		self.prefsoverwriteframe.grid_rowconfigure(2, weight=1)
+		self.prefsoverwriteheader = tk.Label(self.prefsoverwriteframe, text="Create/Modify Preferences", font=("Helvetica", 8, "bold"))
+		self.prefsoverwriteheader.grid(row=0, column=0)
+		self.prefsoverwritedesc = tk.Label(self.prefsoverwriteframe, 
+		text="If ticked, Acid will overwrite/modify existing, same-named policies with the new ones", 
+		font=("Helvetica", 8), wraplength=300)
+		self.prefsoverwritedesc.grid(row=1, column=0)
+		self.prefsoverwritevar = tk.IntVar()
+		self.prefsoverwritebox = tk.Checkbutton(self.prefsoverwriteframe, text="Overwrite If Exists", variable=self.prefsoverwritevar)
+		self.prefsoverwritebox.grid(row=2, column=0)
+		#####################
 		######## NTP ########
-		self.ntpheader = tk.Label(self.bw, text="Step 1: Add NTP Servers", font=("Helvetica", 12, "bold"))
-		self.ntpheader.grid(row=0, column=0, columnspan=4)
-		self.ntplabel = tk.Label(self.bw, text="NTP Server Hostname or IP Address")
+		self.ntpframe = tk.Frame(self.bw, borderwidth=4, relief=tk.RAISED)
+		self.ntpframe.pack(fill=tk.BOTH, expand=tk.YES)
+		self.ntpframe.grid_columnconfigure(0, weight=1)
+		self.ntpframe.grid_columnconfigure(1, weight=1)
+		self.ntpframe.grid_columnconfigure(2, weight=1)
+		self.ntpframe.grid_columnconfigure(3, weight=1)
+		self.ntpheadframe = tk.Frame(self.ntpframe)
+		self.ntpheadframe.grid(row=0, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.ntpheadframe.grid_columnconfigure(0, weight=1)
+		self.ntpheader = tk.Label(self.ntpheadframe, text="Step 1: Add NTP Servers", font=("Helvetica", 12, "bold"))
+		self.ntpheader.grid(row=0, column=0)
+		self.ntplabel = tk.Label(self.ntpframe, text="NTP Server Hostname or IP Address")
 		self.ntplabel.grid(row=1, column=0, sticky=tk.E)
-		self.ntpentry = tk.Entry(self.bw, bd=5, width=35)
+		self.ntpentry = tk.Entry(self.ntpframe, bd=5, width=35)
 		self.ntpentry.grid(row=1, column=1)
-		self.ntpsubmit = tk.Button(self.bw, text='Add NTP Server', command=self.submit_ntp)
+		self.ntpsubmit = tk.Button(self.ntpframe, text='Add NTP Server', command=self.submit_ntp)
 		self.ntpsubmit.grid(row=1, column=3)
 		self.ntpchecktext = tk.StringVar()
 		self.ntpchecktext.set("")
-		self.ntpchecklabel = tk.Label(self.bw, textvariable=self.ntpchecktext)
+		self.ntpchecklabel = tk.Label(self.ntpframe, textvariable=self.ntpchecktext)
 		self.ntpchecklabel.grid(row=2, column=1)
 		self.ntpprefvar = tk.IntVar()
-		self.ntpprefbox = tk.Checkbutton(self.bw, text="Preferred", variable=self.ntpprefvar)
+		self.ntpprefbox = tk.Checkbutton(self.ntpframe, text="Preferred", variable=self.ntpprefvar)
 		self.ntpprefbox.grid(row=1, column=2)
 		self.ntpstatustext = tk.StringVar()
 		self.ntpstatustext.set("")
-		self.ntpstatuslabel = tk.Label(self.bw, textvariable=self.ntpstatustext)
-		self.ntpstatuslabel.grid(row=1, column=4)
-		self.onetwosep = tk.Frame(self.bw, height=1, bg="gray50")
-		self.onetwosep.grid(row=10, column=0, columnspan=100, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.ntpstatuslabel = tk.Label(self.ntpframe, textvariable=self.ntpstatustext)
+		self.ntpstatuslabel.grid(row=2, column=3)
 		#####################
 		######## DNS ########
-		self.dnsheader = tk.Label(self.bw, text="Step 2: Add DNS Settings", font=("Helvetica", 12, "bold"))
-		self.dnsheader.grid(row=11, column=0, columnspan=4)
-		self.dnssvrlabel = tk.Label(self.bw, text="DNS Server IP Address")
-		self.dnssvrlabel.grid(row=12, column=0, sticky=tk.E)
-		self.dnssvrentry = tk.Entry(self.bw, bd=5, width=35)
-		self.dnssvrentry.grid(row=12, column=1)
-		self.dnssvrsubmit = tk.Button(self.bw, text='Add DNS Server', command=self.submit_dns_server)
-		self.dnssvrsubmit.grid(row=12, column=3)
+		self.dnsframe = tk.Frame(self.bw, borderwidth=4, relief=tk.RAISED)
+		self.dnsframe.pack(fill=tk.BOTH, expand=tk.YES)
+		self.dnsframe.grid_columnconfigure(0, weight=1)
+		self.dnsframe.grid_columnconfigure(1, weight=1)
+		self.dnsframe.grid_columnconfigure(2, weight=1)
+		self.dnsheadframe = tk.Frame(self.dnsframe)
+		self.dnsheadframe.grid(row=0, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.dnsheadframe.grid_columnconfigure(0, weight=1)
+		self.dnsheader = tk.Label(self.dnsheadframe, text="Step 2: Add DNS Settings", font=("Helvetica", 12, "bold"))
+		self.dnsheader.grid(row=0, column=0)
+		######
+		self.dnssvrframe = tk.Frame(self.dnsframe, borderwidth=1, relief=tk.SUNKEN)
+		self.dnssvrframe.grid(row=1, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.dnssvrframe.grid_columnconfigure(0, weight=3)
+		self.dnssvrframe.grid_columnconfigure(1, weight=1)
+		self.dnssvrheader = tk.Label(self.dnssvrframe, text="Add DNS Server", font=("Helvetica", 8, "bold"))
+		self.dnssvrheader.grid(row=0, column=0, columnspan=2)
+		self.dnssvrlabel = tk.Label(self.dnssvrframe, text="DNS Server IP Address")
+		self.dnssvrlabel.grid(row=1, column=0)
+		self.dnssvrentry = tk.Entry(self.dnssvrframe, bd=5, width=30)
+		self.dnssvrentry.grid(row=2, column=0)
+		self.dnssvrprefvar = tk.IntVar()
+		self.dnssvrprefbox = tk.Checkbutton(self.dnssvrframe, text="Preferred", variable=self.dnssvrprefvar)
+		self.dnssvrprefbox.grid(row=2, column=1)
 		self.dnssvrchecktext = tk.StringVar()
 		self.dnssvrchecktext.set("")
-		self.dnssvrchecklabel = tk.Label(self.bw, textvariable=self.dnssvrchecktext)
-		self.dnssvrchecklabel.grid(row=13, column=1)
-		self.dnssvrprefvar = tk.IntVar()
-		self.dnssvrprefbox = tk.Checkbutton(self.bw, text="Preferred", variable=self.dnssvrprefvar)
-		self.dnssvrprefbox.grid(row=12, column=2)
+		self.dnssvrchecklabel = tk.Label(self.dnssvrframe, textvariable=self.dnssvrchecktext)
+		self.dnssvrchecklabel.grid(row=3, column=0)
+		self.dnssvrsubmitframe = tk.Frame(self.dnssvrframe)
+		self.dnssvrsubmitframe.grid(row=4, column=0, columnspan=2, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.dnssvrsubmit = tk.Button(self.dnssvrsubmitframe, text='Add DNS Server', command=self.submit_dns_server)
+		self.dnssvrsubmit.grid(row=0, column=0)
 		self.dnssvrstatustext = tk.StringVar()
 		self.dnssvrstatustext.set("")
-		self.dnssvrstatuslabel = tk.Label(self.bw, textvariable=self.dnssvrstatustext)
-		self.dnssvrstatuslabel.grid(row=12, column=4)
+		self.dnssvrstatuslabel = tk.Label(self.dnssvrsubmitframe, textvariable=self.dnssvrstatustext)
+		self.dnssvrstatuslabel.grid(row=0, column=1)
 		######
-		self.dnsdmnlabel = tk.Label(self.bw, text="DNS Search Domain")
-		self.dnsdmnlabel.grid(row=14, column=0, sticky=tk.E)
-		self.dnsdmnentry = tk.Entry(self.bw, bd=5, width=35)
-		self.dnsdmnentry.grid(row=14, column=1)
-		self.dnsdmnsubmit = tk.Button(self.bw, text='Set DNS Domain', command=self.submit_dns_domain)
-		self.dnsdmnsubmit.grid(row=14, column=3)
+		self.dnsdmnframe = tk.Frame(self.dnsframe, borderwidth=1, relief=tk.SUNKEN)
+		self.dnsdmnframe.grid(row=1, column=1, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.dnsdmnframe.grid_columnconfigure(0, weight=3)
+		self.dnsdmnframe.grid_columnconfigure(1, weight=1)
+		self.dnsdmnframe.grid_columnconfigure(2, weight=1)
+		self.dnsdmnheader = tk.Label(self.dnsdmnframe, text="Add DNS Search Domain", font=("Helvetica", 8, "bold"))
+		self.dnsdmnheader.grid(row=0, column=0, columnspan=3)
+		self.dnsdmnlabel = tk.Label(self.dnsdmnframe, text="DNS Search Domain")
+		self.dnsdmnlabel.grid(row=1, column=0)
+		self.dnsdmnentry = tk.Entry(self.dnsdmnframe, bd=5, width=30)
+		self.dnsdmnentry.grid(row=2, column=0)
+		self.dnsdmnprefvar = tk.IntVar()
+		self.dnsdmnprefbox = tk.Checkbutton(self.dnsdmnframe, text="Default", variable=self.dnsdmnprefvar)
+		self.dnsdmnprefbox.grid(row=2, column=1)
 		self.dnsdmnchecktext = tk.StringVar()
 		self.dnsdmnchecktext.set("")
-		self.dnsdmnchecklabel = tk.Label(self.bw, textvariable=self.dnsdmnchecktext)
-		self.dnsdmnchecklabel.grid(row=15, column=1)
-		self.dnsdmnprefvar = tk.IntVar()
-		self.dnsdmnprefbox = tk.Checkbutton(self.bw, text="Default", variable=self.dnsdmnprefvar)
-		self.dnsdmnprefbox.grid(row=14, column=2)
+		self.dnsdmnchecklabel = tk.Label(self.dnsdmnframe, textvariable=self.dnsdmnchecktext)
+		self.dnsdmnchecklabel.grid(row=3, column=0)
+		self.dnsdmnsubmitframe = tk.Frame(self.dnsdmnframe)
+		self.dnsdmnsubmitframe.grid(row=4, column=0, columnspan=2, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.dnsdmnsubmit = tk.Button(self.dnsdmnsubmitframe, text='Add DNS Search Domain', command=self.submit_dns_domain)
+		self.dnsdmnsubmit.grid(row=0, column=0)
 		self.dnsdmnstatustext = tk.StringVar()
 		self.dnsdmnstatustext.set("")
-		self.dnsdmnstatuslabel = tk.Label(self.bw, textvariable=self.dnsdmnstatustext)
-		self.dnsdmnstatuslabel.grid(row=14, column=4)
+		self.dnsdmnstatuslabel = tk.Label(self.dnsdmnsubmitframe, textvariable=self.dnsdmnstatustext)
+		self.dnsdmnstatuslabel.grid(row=0, column=1)
 		######
-		self.dnsassignsubmit = tk.Button(self.bw, text='Assign DNS to OOB EPG', command=self.submit_assign_dns)
-		self.dnsassignsubmit.grid(row=15, column=2, columnspan=2, sticky=tk.E)
+		self.dnsassignframe = tk.Frame(self.dnsframe, borderwidth=1, relief=tk.SUNKEN)
+		self.dnsassignframe.grid(row=1, column=2, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.dnsassignframe.grid_columnconfigure(0, weight=1)
+		self.dnsassignheader = tk.Label(self.dnsassignframe, text="Assign DNS Settings to EPG", font=("Helvetica", 8, "bold"))
+		self.dnsassignheader.grid(row=0, column=0)
+		self.dnsassigndesc = tk.Label(self.dnsassignframe, text="  ", font=("Helvetica", 8))
+		self.dnsassigndesc.grid(row=1, column=0)
+		self.dnsassignsubmit = tk.Button(self.dnsassignframe, text='Assign DNS to OOB EPG', command=self.submit_assign_dns)
+		self.dnsassignsubmit.grid(row=5, column=0)
 		self.dnsassignstatustext = tk.StringVar()
 		self.dnsassignstatustext.set("")
-		self.dnsassignstatuslabel = tk.Label(self.bw, textvariable=self.dnsassignstatustext)
-		self.dnsassignstatuslabel.grid(row=15, column=4)
-		######
-		self.twothreesep = tk.Frame(self.bw, height=1, bg="gray50")
-		self.twothreesep.grid(row=20, column=0, columnspan=100, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.dnsassignstatuslabel = tk.Label(self.dnsassignframe, textvariable=self.dnsassignstatustext)
+		self.dnsassignstatuslabel.grid(row=6, column=0)
 		#####################
 		######## POD ########
 		self.podframe = tk.Frame(self.bw, borderwidth=4, relief=tk.RAISED)
-		self.podframe.grid(row=22, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.podframe.pack(fill=tk.BOTH, expand=tk.YES)
+		self.podframe.grid_columnconfigure(0, weight=2)
 		self.podframe.grid_columnconfigure(1, weight=1)
 		self.podheadframe = tk.Frame(self.podframe)
 		self.podheadframe.grid(row=0, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
@@ -351,6 +469,8 @@ class basicwindow:
 		######
 		self.podselectframe = tk.Frame(self.podframe, borderwidth=1, relief=tk.SUNKEN)
 		self.podselectframe.grid(row=1, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.podselectframe.grid_columnconfigure(0, weight=1)
+		self.podselectframe.grid_columnconfigure(2, weight=1)
 		self.podlabel = tk.Label(self.podselectframe, text="Select an ACI Pod")
 		self.podlabel.grid(row=1, column=0, sticky="e")
 		self.podvar = tk.StringVar(self.podselectframe)
@@ -377,15 +497,18 @@ class basicwindow:
 		#####################
 		######## BGP ########
 		self.bgpframe = tk.Frame(self.bw, borderwidth=4, relief=tk.RAISED)
-		self.bgpframe.grid(row=23, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.bgpframe.pack(fill=tk.BOTH, expand=tk.YES)
 		self.bgpframe.grid_columnconfigure(0, weight=1)
 		self.bgpheadframe = tk.Frame(self.bgpframe)
-		self.bgpheadframe.grid(row=0, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.bgpheadframe.grid(row=0, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
 		self.bgpheadframe.grid_columnconfigure(0, weight=1)
 		self.bgpheader = tk.Label(self.bgpheadframe, text="Step 4: Setup BGP", font=("Helvetica", 12, "bold"))
 		self.bgpheader.grid(row=0, column=0)
+		######
 		self.bgpasnframe = tk.Frame(self.bgpframe, borderwidth=1, relief=tk.SUNKEN)
-		self.bgpasnframe.grid(row=1, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.bgpasnframe.grid(row=1, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.bgpasnframe.grid_columnconfigure(0, weight=1)
+		self.bgpasnframe.grid_columnconfigure(2, weight=1)
 		self.bgpasnlabel = tk.Label(self.bgpasnframe, text="BGP Autonomous System Number (ASN)       ")
 		self.bgpasnlabel.grid(row=1, column=0, sticky="en")
 		self.bgpasnentry = tk.Entry(self.bgpasnframe, bd=5, width=15)
@@ -395,14 +518,16 @@ class basicwindow:
 		self.bgpasnchecktext = tk.StringVar()
 		self.bgpasnchecktext.set("")
 		self.bgpasnchecklabel = tk.Label(self.bgpasnframe, textvariable=self.bgpasnchecktext)
-		self.bgpasnchecklabel.grid(row=2, column=1, columnspan=101)
+		self.bgpasnchecklabel.grid(row=2, column=1)
 		self.bgpasnstatustext = tk.StringVar()
 		self.bgpasnstatustext.set("")
 		self.bgpasnstatuslabel = tk.Label(self.bgpasnframe, textvariable=self.bgpasnstatustext)
-		self.bgpasnstatuslabel.grid(row=1, column=3)
+		self.bgpasnstatuslabel.grid(row=2, column=2)
 		######
 		self.bgprrframe = tk.Frame(self.bgpframe, borderwidth=1, relief=tk.SUNKEN)
-		self.bgprrframe.grid(row=3, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.bgprrframe.grid(row=3, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.bgprrframe.grid_columnconfigure(0, weight=1)
+		self.bgprrframe.grid_columnconfigure(3, weight=1)
 		self.bgpasnlabel = tk.Label(self.bgprrframe, text="Add BGP Route Reflector Nodes  ")
 		self.bgpasnlabel.grid(row=0, column=0, sticky="en")
 		self.bgprrvar = tk.StringVar(self.bgprrframe)
@@ -410,14 +535,15 @@ class basicwindow:
 		self.bgprrmenu = ttk.Combobox(self.bgprrframe, textvariable=self.bgprrvar, width=35)
 		self.bgprrmenu.state(['readonly'])
 		self.bgprrmenu.grid(row=0, column=1)
-		self.bgprrupdate = tk.Button(self.bgprrframe, text='Update List', command=self.update_bgp_rr_nodes)
+		self.bgprrupdate = tk.Button(self.bgprrframe, text='Update List', 
+		command= lambda: self.update_switch_list(self.bgprrupdatetext, self.bgprrupdatelabel, self.bgprrmenu))
 		self.bgprrupdate.grid(row=0, column=2)
 		self.bgprrsubmit = tk.Button(self.bgprrframe, text='Add RR Node', command=self.submit_rr_node)
 		self.bgprrsubmit.grid(row=0, column=3)
 		self.bgprrstatustext = tk.StringVar()
 		self.bgprrstatustext.set("")
 		self.bgprrstatuslabel = tk.Label(self.bgprrframe, textvariable=self.bgprrstatustext)
-		self.bgprrstatuslabel.grid(row=0, column=4)
+		self.bgprrstatuslabel.grid(row=1, column=3)
 		self.bgprrupdatetext = tk.StringVar()
 		self.bgprrupdatetext.set("")
 		self.bgprrupdatelabel = tk.Label(self.bgprrframe, textvariable=self.bgprrupdatetext)
@@ -425,8 +551,10 @@ class basicwindow:
 		##########################
 		######## IF-PROFs ########
 		self.ifprofframe = tk.Frame(self.bw, borderwidth=4, relief=tk.RAISED)
-		self.ifprofframe.grid(row=24, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.ifprofframe.pack(fill=tk.BOTH, expand=tk.YES)
+		self.ifprofframe.grid_columnconfigure(0, weight=1)
 		self.ifprofframe.grid_columnconfigure(1, weight=1)
+		self.ifprofframe.grid_columnconfigure(2, weight=1)
 		self.ifprofheadframe = tk.Frame(self.ifprofframe)
 		self.ifprofheadframe.grid(row=0, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
 		self.ifprofheadframe.grid_columnconfigure(0, weight=1)
@@ -435,7 +563,8 @@ class basicwindow:
 		######
 		self.ifprofdisframe = tk.Frame(self.ifprofframe, borderwidth=1, relief=tk.SUNKEN)
 		self.ifprofdisframe.grid(row=1, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
-		self.ifprofdisframe.grid_columnconfigure(3, weight=1)
+		self.ifprofdisframe.grid_columnconfigure(0, weight=1)
+		self.ifprofdisframe.grid_columnconfigure(1, weight=1)
 		self.ifprofdisheader = tk.Label(self.ifprofdisframe, text="Discovery Protocols", font=("Helvetica", 8, "bold"))
 		self.ifprofdisheader.grid(row=0, column=0, columnspan=2)
 		self.ifprofcdpenvar = tk.IntVar(value=1)
@@ -470,6 +599,7 @@ class basicwindow:
 		self.ifprofllframe = tk.Frame(self.ifprofframe, borderwidth=1, relief=tk.SUNKEN)
 		self.ifprofllframe.grid(row=1, column=1, sticky=tk.N+tk.S+tk.W+tk.E)
 		self.ifprofllframe.grid_columnconfigure(0, weight=1)
+		self.ifprofllframe.grid_columnconfigure(1, weight=1)
 		self.ifprofllheader = tk.Label(self.ifprofllframe, text="Link-Layer Settings", font=("Helvetica", 8, "bold"))
 		self.ifprofllheader.grid(row=0, column=0, columnspan=2)
 		self.ifprof1gvar = tk.IntVar(value=1)
@@ -490,6 +620,7 @@ class basicwindow:
 		self.ifprofpcframe = tk.Frame(self.ifprofframe, borderwidth=1, relief=tk.SUNKEN)
 		self.ifprofpcframe.grid(row=1, column=2, sticky=tk.N+tk.S+tk.W+tk.E)
 		self.ifprofpcframe.grid_columnconfigure(0, weight=1)
+		self.ifprofpcframe.grid_columnconfigure(1, weight=1)
 		self.ifprofpcheader = tk.Label(self.ifprofpcframe, text="Port-Channel Profiles", font=("Helvetica", 8, "bold"))
 		self.ifprofpcheader.grid(row=0, column=0, columnspan=2)
 		self.ifproflacpvar = tk.IntVar(value=1)
@@ -514,11 +645,12 @@ class basicwindow:
 		self.ifprofmacentry.grid(row=4, column=0, columnspan=2)
 		self.ifprofmacentry.insert(tk.END, 'MAC-Pinning')
 		######
-		self.ifprofsubframe = tk.Frame(self.ifprofframe, borderwidth=1, relief=tk.SUNKEN)
-		self.ifprofsubframe.grid(row=2, column=1, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.ifprofsubframe = tk.Frame(self.ifprofframe)
+		self.ifprofsubframe.grid(row=2, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.ifprofsubframe.grid_columnconfigure(0, weight=1)
 		self.ifprofsubframe.grid_columnconfigure(1, weight=1)
 		self.ifprofsubmit = tk.Button(self.ifprofsubframe, text='Add Selected Interface Profiles', command=self.submit_if_profiles)
-		self.ifprofsubmit.grid(row=0, column=0)
+		self.ifprofsubmit.grid(row=0, column=0, sticky=tk.E)
 		self.ifprofchecktext = tk.StringVar()
 		self.ifprofchecktext.set("")
 		self.ifprofchecklabel = tk.Label(self.ifprofsubframe, textvariable=self.ifprofchecktext)
@@ -526,8 +658,10 @@ class basicwindow:
 		##########################
 		######## AAEPs ########
 		self.aaepframe = tk.Frame(self.bw, borderwidth=4, relief=tk.RAISED)
-		self.aaepframe.grid(row=25, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.aaepframe.pack(fill=tk.BOTH, expand=tk.YES)
+		self.aaepframe.grid_columnconfigure(0, weight=1)
 		self.aaepframe.grid_columnconfigure(1, weight=1)
+		self.aaepframe.grid_columnconfigure(2, weight=1)
 		self.aaepheadframe = tk.Frame(self.aaepframe)
 		self.aaepheadframe.grid(row=0, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
 		self.aaepheadframe.grid_columnconfigure(0, weight=1)
@@ -536,31 +670,32 @@ class basicwindow:
 		######
 		self.aaepvlanframe = tk.Frame(self.aaepframe, borderwidth=1, relief=tk.SUNKEN)
 		self.aaepvlanframe.grid(row=1, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.aaepvlanframe.grid_columnconfigure(0, weight=1)
+		self.aaepvlanframe.grid_columnconfigure(1, weight=1)
+		self.aaepvlanframe.grid_columnconfigure(2, weight=1)
 		self.aaepvlanframe.grid_columnconfigure(3, weight=1)
-		#self.aaepvlanheader = tk.Label(self.aaepvlanframe, text="VLAN Pool (Static)", font=("Helvetica", 8, "bold"))
-		#self.aaepvlanheader.grid(row=0, column=0, columnspan=2)
 		self.aaepvlanheadervar = tk.IntVar(value=1)
 		self.aaepvlanheader = tk.Checkbutton(self.aaepvlanframe, text="VLAN Pool (Static)", variable=self.aaepvlanheadervar, font=("Helvetica", 8, "bold"), command= lambda: self.aaep_frame_control())
-		self.aaepvlanheader.grid(row=0, column=0, columnspan=2)
+		self.aaepvlanheader.grid(row=0, column=0, columnspan=4)
 		self.aaepvlanpoollabel = tk.Label(self.aaepvlanframe, text="VLAN Pool Name")
-		self.aaepvlanpoollabel.grid(row=1, column=0)
+		self.aaepvlanpoollabel.grid(row=1, column=0, sticky=tk.E)
 		self.aaepvlanpoolentry = tk.Entry(self.aaepvlanframe, bd=1, width=15)
-		self.aaepvlanpoolentry.grid(row=1, column=1)
+		self.aaepvlanpoolentry.grid(row=1, column=1, sticky=tk.W)
 		self.aaepvlanpoolentry.insert(tk.END, 'phys-static')
 		self.aaepvlanrangeframe = tk.Frame(self.aaepvlanframe)
 		self.aaepvlanrangeframe.grid(row=2, column=0, columnspan=4, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.aaepvlanrangeframe.grid_columnconfigure(0, weight=1)
 		self.aaepvlanrangeframe.grid_columnconfigure(3, weight=1)
 		self.aaepvlanrangelabel = tk.Label(self.aaepvlanrangeframe, text="VLAN Range  ")
-		self.aaepvlanrangelabel.grid(row=0, column=0)
+		self.aaepvlanrangelabel.grid(row=0, column=0, sticky=tk.E)
 		self.aaepvlanstartentry = tk.Entry(self.aaepvlanrangeframe, bd=1, width=7)
 		self.aaepvlanstartentry.grid(row=0, column=1)
 		self.aaepvlanstartentry.insert(tk.END, '1')
-		self.aaepvlanrangedashlabel = tk.Label(self.aaepvlanrangeframe, text=" -")
+		self.aaepvlanrangedashlabel = tk.Label(self.aaepvlanrangeframe, text=" - ")
 		self.aaepvlanrangedashlabel.grid(row=0, column=2)
 		self.aaepvlanendentry = tk.Entry(self.aaepvlanrangeframe, bd=1, width=7)
-		self.aaepvlanendentry.grid(row=0, column=3)
+		self.aaepvlanendentry.grid(row=0, column=3, sticky=tk.W)
 		self.aaepvlanendentry.insert(tk.END, '2000')
-		#self.aaepvlanrangedstatus = tk.Label(self.aaepvlanrangeframe, text="status")
 		self.aaepvlanrangedstatusvar = tk.StringVar()
 		self.aaepvlanrangedstatusvar.set("")
 		self.aaepvlanrangedstatus = tk.Label(self.aaepvlanrangeframe, textvariable=self.aaepvlanrangedstatusvar)
@@ -568,16 +703,15 @@ class basicwindow:
 		######
 		self.aaepaaepframe = tk.Frame(self.aaepframe, borderwidth=1, relief=tk.SUNKEN)
 		self.aaepaaepframe.grid(row=1, column=1, sticky=tk.N+tk.S+tk.W+tk.E)
-		self.aaepaaepframe.grid_columnconfigure(3, weight=1)
-		#self.aaepaaepheader = tk.Label(self.aaepaaepframe, text="AAE Profile", font=("Helvetica", 8, "bold"))
-		#self.aaepaaepheader.grid(row=0, column=0, columnspan=2)
+		self.aaepaaepframe.grid_columnconfigure(0, weight=1)
+		self.aaepaaepframe.grid_columnconfigure(1, weight=1)
 		self.aaepaaepheadervar = tk.IntVar(value=1)
 		self.aaepaaepheader = tk.Checkbutton(self.aaepaaepframe, text="AAEP Profile", variable=self.aaepaaepheadervar, font=("Helvetica", 8, "bold"), command= lambda: self.aaep_frame_control())
 		self.aaepaaepheader.grid(row=0, column=0, columnspan=2)
 		self.aaepaaeplabel = tk.Label(self.aaepaaepframe, text="Profile Name")
-		self.aaepaaeplabel.grid(row=1, column=0)
+		self.aaepaaeplabel.grid(row=1, column=0, sticky=tk.E)
 		self.aaepaaepentry = tk.Entry(self.aaepaaepframe, bd=1, width=15)
-		self.aaepaaepentry.grid(row=1, column=1)
+		self.aaepaaepentry.grid(row=1, column=1, sticky=tk.W)
 		self.aaepaaepentry.insert(tk.END, 'phys')
 		self.aaepaaepinfravar = tk.IntVar()
 		self.aaepaaepinfrabox = tk.Checkbutton(self.aaepaaepframe, text="Enable Infrastructure VLAN", variable=self.aaepaaepinfravar)
@@ -585,16 +719,15 @@ class basicwindow:
 		######
 		self.aaepphysdomframe = tk.Frame(self.aaepframe, borderwidth=1, relief=tk.SUNKEN)
 		self.aaepphysdomframe.grid(row=1, column=2, sticky=tk.N+tk.S+tk.W+tk.E)
-		self.aaepphysdomframe.grid_columnconfigure(3, weight=1)
-		#self.aaepphysdomheader = tk.Label(self.aaepphysdomframe, text="Physical Domain", font=("Helvetica", 8, "bold"))
-		#self.aaepphysdomheader.grid(row=0, column=0, columnspan=2)
+		self.aaepphysdomframe.grid_columnconfigure(0, weight=1)
+		self.aaepphysdomframe.grid_columnconfigure(1, weight=1)
 		self.aaepphysdomheadervar = tk.IntVar(value=1)
 		self.aaepphysdomheader = tk.Checkbutton(self.aaepphysdomframe, text="Physical Domain", variable=self.aaepphysdomheadervar, font=("Helvetica", 8, "bold"), command= lambda: self.aaep_frame_control())
 		self.aaepphysdomheader.grid(row=0, column=0, columnspan=2)
 		self.aaepphysdomlabel = tk.Label(self.aaepphysdomframe, text="Physical Domain Name")
-		self.aaepphysdomlabel.grid(row=1, column=0)
+		self.aaepphysdomlabel.grid(row=1, column=0, sticky=tk.E)
 		self.aaepphysdomentry = tk.Entry(self.aaepphysdomframe, bd=1, width=15)
-		self.aaepphysdomentry.grid(row=1, column=1)
+		self.aaepphysdomentry.grid(row=1, column=1, sticky=tk.W)
 		self.aaepphysdomentry.insert(tk.END, 'phys')
 		self.aaepphysdomassvar = tk.IntVar(value=1)
 		self.aaepphysdomassbox = tk.Checkbutton(self.aaepphysdomframe, text="Associate VLAN Pool and AAEP to Physical Domain", variable=self.aaepphysdomassvar, command= lambda: self.aaep_frame_control())
@@ -602,20 +735,86 @@ class basicwindow:
 		######
 		self.aaepsubframe = tk.Frame(self.aaepframe, borderwidth=1, relief=tk.SUNKEN)
 		self.aaepsubframe.grid(row=2, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
-		self.aaepsubframe.grid_columnconfigure(3, weight=1)
-		self.aaepsubmitspacer = tk.Label(self.aaepsubframe, text=" "*60)
-		self.aaepsubmitspacer.grid(row=0, column=0)
+		self.aaepsubframe.grid_columnconfigure(0, weight=1)
+		self.aaepsubframe.grid_columnconfigure(1, weight=1)
 		self.aaepsubmit = tk.Button(self.aaepsubframe, text='Submit AAEP Settings', command=self.submit_aaep)
-		self.aaepsubmit.grid(row=0, column=1, sticky=tk.E)
+		self.aaepsubmit.grid(row=0, column=0, sticky=tk.E)
 		self.aaepchecktext = tk.StringVar()
 		self.aaepchecktext.set("")
 		self.aaepchecklabel = tk.Label(self.aaepsubframe, textvariable=self.aaepchecktext)
-		self.aaepchecklabel.grid(row=0, column=2, sticky=tk.W)
+		self.aaepchecklabel.grid(row=0, column=1, sticky=tk.W)
+		##########################
+		######## Mgmt IPs ########
+		self.mgmtipframe = tk.Frame(self.bw, borderwidth=4, relief=tk.RAISED)
+		self.mgmtipframe.pack(fill=tk.BOTH, expand=tk.YES)
+		self.mgmtipframe.grid_columnconfigure(1, weight=1)
+		self.mgmtipheadframe = tk.Frame(self.mgmtipframe)
+		self.mgmtipheadframe.grid(row=0, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.mgmtipheadframe.grid_columnconfigure(0, weight=1)
+		self.mgmtipheader = tk.Label(self.mgmtipheadframe, 
+		text="Step 7: Set Out of Band (OOB) Management IPs", font=("Helvetica", 12, "bold"))
+		self.mgmtipheader.grid(row=0, column=0)
+		######
+		self.mgmtipselframe = tk.Frame(self.mgmtipframe)
+		self.mgmtipselframe.grid(row=1, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.mgmtipselframe.grid_columnconfigure(0, weight=1)
+		self.mgmtipselframe.grid_columnconfigure(1, weight=1)
+		self.mgmtipselframe.grid_columnconfigure(2, weight=1)
+		self.mgmtipselframe.grid_columnconfigure(3, weight=1)
+		self.mgmtipnodevar = tk.StringVar(self.mgmtipselframe)
+		self.mgmtipnodelabel = tk.Label(self.mgmtipselframe, text="Leaf/Spine Switch")
+		self.mgmtipnodelabel.grid(row=0, column=0)
+		self.mgmtipnodevar.set("Select Switch")
+		self.mgmtipmenu = ttk.Combobox(self.mgmtipselframe, textvariable=self.mgmtipnodevar, width=25)
+		self.mgmtipmenu.state(['readonly'])
+		self.mgmtipmenu.grid(row=1, column=0)
+		######
+		self.mgmtipupdateframe = tk.Frame(self.mgmtipselframe)
+		self.mgmtipupdateframe.grid(row=2, column=0)
+		self.mgmtipupdateframe.grid_columnconfigure(0, weight=1)
+		self.mgmtipupdate = tk.Button(self.mgmtipupdateframe, text='Update List', 
+		command= lambda: self.update_switch_list(self.mgmtipupdatetext, self.mgmtipupdatelabel, self.mgmtipmenu))
+		self.mgmtipupdate.grid(row=0, column=0, sticky=tk.E)
+		self.mgmtipupdatetext = tk.StringVar()
+		self.mgmtipupdatetext.set("")
+		self.mgmtipupdatelabel = tk.Label(self.mgmtipupdateframe, textvariable=self.mgmtipupdatetext)
+		self.mgmtipupdatelabel.grid(row=0, column=1)
+		######
+		self.mgmtipipentrylabel = tk.Label(self.mgmtipselframe, text="OOB IP Address (CIDR)")
+		self.mgmtipipentrylabel.grid(row=0, column=1)
+		self.mgmtipipentry = tk.Entry(self.mgmtipselframe, bd=5, width=20)
+		self.mgmtipipentry.grid(row=1, column=1)
+		self.mgmtipipstatustext = tk.StringVar()
+		self.mgmtipipstatustext.set("")
+		self.mgmtipipstatuslabel = tk.Label(self.mgmtipselframe, textvariable=self.mgmtipipstatustext)
+		self.mgmtipipstatuslabel.grid(row=2, column=1)
+		######
+		self.mgmtipgwentrylabel = tk.Label(self.mgmtipselframe, text="Default Gateway")
+		self.mgmtipgwentrylabel.grid(row=0, column=2)
+		self.mgmtipgwentry = tk.Entry(self.mgmtipselframe, bd=5, width=20)
+		self.mgmtipgwentry.grid(row=1, column=2)
+		self.mgmtipgwstatustext = tk.StringVar()
+		self.mgmtipgwstatustext.set("")
+		self.mgmtipgwstatuslabel = tk.Label(self.mgmtipselframe, textvariable=self.mgmtipgwstatustext)
+		self.mgmtipgwstatuslabel.grid(row=2, column=2)
+		######
+		self.mgmtipsubmit = tk.Button(self.mgmtipselframe, text='Submit OOB IP Settings', command=self.submit_mgmtip)
+		self.mgmtipsubmit.grid(row=1, column=3)
+		self.mgmtipsubmittext = tk.StringVar()
+		self.mgmtipsubmittext.set("")
+		self.mgmtipsubmitlabel = tk.Label(self.mgmtipselframe, textvariable=self.mgmtipsubmittext)
+		self.mgmtipsubmitlabel.grid(row=2, column=3)
 		#######################
 		######## CLOSE ########
 		self.closebutton = tk.Button(self.bw, text='Close', command=self.close)
-		self.closebutton.grid(row=100, column=100)
+		self.closebutton.pack()
 		#######################
+		#######################
+	def on_configure(self, event):
+		self.bwcanvas.itemconfig(self.interior_id, width=event.width)
+		self.bwcanvas.configure(scrollregion=self.bwcanvas.bbox('all'))
+	def on_mousewheel(self, event):
+		self.bwcanvas.yview_scroll(int(-1*(event.delta/120)), "units")
 	def submit_ntp(self):
 		if check_ipdns_entry(self.ntpentry, self.ntpchecklabel, self.ntpchecktext):
 			if gui.login_check():
@@ -733,12 +932,12 @@ class basicwindow:
 				self.podupdatetext.set("Update Failed")
 				self.podupdatelabel.configure(fg="red")
 			gui.write_output(gui.header(35, "Pod List Update Complete", 2))
-	def update_bgp_rr_nodes(self):
+	def update_switch_list(self, updatetextobj, updatelabelobj, updatemenuobj):
 		if gui.login_check():
 			podname = self.podmenu.get()
 			if "select" in podname.lower():
-				self.bgprrupdatetext.set("Select a Pod First")
-				self.bgprrupdatelabel.configure(fg="red")
+				updatetextobj.set("Select a Pod First")
+				updatelabelobj.configure(fg="red")
 				return None
 			else:
 				poddata = self.get_pod_info(podname)
@@ -750,9 +949,9 @@ class basicwindow:
 					nodefriendlyname += " | "+poddata[node]['name']
 					nodelist.append(nodefriendlyname)
 					self.pods[podname]['nodes'][node].update({"nodefriendlyname": nodefriendlyname})
-				self.bgprrmenu['values'] = nodelist
-				self.bgprrupdatetext.set("List Updated")
-				self.bgprrupdatelabel.configure(fg="green4")
+				updatemenuobj['values'] = nodelist
+				updatetextobj.set("List Updated")
+				updatelabelobj.configure(fg="green4")
 	def get_pod_info(self, podname="Pod 1"):
 		if gui.login_check():
 			podid = self.pods[podname]["id"]
@@ -949,7 +1148,7 @@ class basicwindow:
 		for obj in checkobjlist:
 			if obj.get() == 1:
 				if nameobjlist[index].get() == "":
-					nameobjlist[index].configure(bg="yellow")
+					nameobjlist[index].configure(bg="orange")
 					status = "empty"
 				elif check_aciobjname_entry(nameobjlist[index]) == False:
 					nameobjlist[index].configure(bg="red")
@@ -993,7 +1192,7 @@ class basicwindow:
 			self.aaepchecklabel.configure(fg="red")
 		elif plist == []:
 			self.aaepchecktext.set("Nothing To Do")
-			self.aaepchecklabel.configure(fg="yellow")
+			self.aaepchecklabel.configure(fg="orange")
 		else:
 			if gui.login_check():
 				self.aaepchecktext.set("Attempting Post...")
@@ -1020,9 +1219,38 @@ class basicwindow:
 				else:
 					self.aaepchecktext.set("Issues Encountered, See Logs")
 					self.aaepchecklabel.configure(fg="red")
+	def submit_mgmtip(self):
+		checkip = check_cidr_entry(self.mgmtipipentry, self.mgmtipipstatuslabel, self.mgmtipipstatustext)
+		checkgw = check_ip_entry(self.mgmtipgwentry, self.mgmtipgwstatuslabel, self.mgmtipgwstatustext)
+		if "select" in self.mgmtipmenu.get().lower():
+			self.mgmtipupdatetext.set("Bad Selection")
+			self.mgmtipupdatelabel.configure(fg="red")
+			return None
+		if checkip and checkgw:
+			if gui.login_check():
+				self.mgmtipsubmittext.set("Attempting Post...")
+				podid =  self.pods[self.podmenu.get()]['id']
+				nodeid = ""
+				for node in self.pods[self.podmenu.get()]["nodes"]:
+					if self.pods[self.podmenu.get()]["nodes"][node]["nodefriendlyname"] == self.mgmtipmenu.get():
+						nodeid = self.pods[self.podmenu.get()]["nodes"][node]["id"]
+				self.pushdatatup = assign_mgmt_ip(podid, nodeid, self.mgmtipipentry.get(), self.mgmtipgwentry.get())
+				self.pushurl = gui.call.baseurl+self.pushdatatup[0]
+				self.pushdata = self.pushdatatup[1]
+				gui.write_output("\n\n\n"+gui.header(35, "Pushing Switch OOB Settings", 2))
+				gui.write_send_header_body(self.pushurl, self.pushdata)
+				self.response = gui.post(url=self.pushurl, data=self.pushdata)
+				gui.write_response_header_body(self.response)
+				if self.response.getcode() == 200:
+					self.mgmtipsubmittext.set("Success: HTTP 200")
+					self.mgmtipsubmitlabel.configure(fg="green4")
+				else:
+					self.mgmtipsubmittext.set("Post Failed")
+					self.mgmtipsubmitlabel.configure(fg="red")
+				gui.write_output(gui.header(35, "Switch OOB IP Push Complete", 2))
 	def close(self):
 		gui.bwopen = False
-		self.bw.destroy()
+		self.basicwindow.destroy()
 
 
 			
@@ -1063,6 +1291,22 @@ def check_ip_entry(entryobj, labelobj, textobj):
 			return False
 		elif checkaddress['status'] == 'pass':
 			textobj.set("Legal IPv4 Address")
+			labelobj.configure(fg="green4")
+			return True
+
+def check_cidr_entry(entryobj, labelobj, textobj):
+	textobj.set("")
+	if entry_is_empty(entryobj):
+		return False
+	else:
+		checkaddress = check_ipv4("cidr", entryobj.get())
+		if checkaddress['status'] == 'fail':
+			entryobj.configure(bg="red")
+			textobj.set("Unrecognized IP CIDR Address")
+			labelobj.configure(fg="red")
+			return False
+		elif checkaddress['status'] == 'pass':
+			textobj.set("Legal IP CIDR Address")
 			labelobj.configure(fg="green4")
 			return True
 
@@ -1313,6 +1557,11 @@ def check_ipv4(iptype, ipdata):
 
 
 
+def modify_pref_setting():
+	if gui.bw.prefsoverwritevar.get() == 0:
+		return "created"
+	elif gui.bw.prefsoverwritevar.get() == 1:
+		return "created,modified"
 
 
 
@@ -1329,14 +1578,14 @@ def add_ntp(ntp_hostname, ntp_preferred):
       "name": ntp_hostname,
       "preferred": ntp_preferred_value,
       "rn": "ntpprov-"+ntp_hostname,
-      "status": "created,modified"
+      "status": modify_pref_setting()
     },
     "children": [
       {
         "datetimeRsNtpProvToEpg": {
           "attributes": {
             "tDn": "uni/tn-mgmt/mgmtp-default/oob-default",
-            "status": "created,modified"
+            "status": modify_pref_setting()
           },
           "children": []
         }
@@ -1360,7 +1609,7 @@ def add_dns_server(dns_address, dns_preferred):
     "attributes": {
       "dn": "uni/fabric/dnsp-default/prov-["+dns_address+"]",
       "addr": dns_address,
-      "status": "created,modified",
+      "status": modify_pref_setting(),
 	  "preferred": dns_preferred_value,
       "rn": "prov-["+dns_address+"]"
     },
@@ -1382,7 +1631,7 @@ def add_dns_domain(dns_domain, default_domain):
     "attributes": {
       "dn": "uni/fabric/dnsp-default/dom-"+dns_domain,
       "name": dns_domain,
-      "status": "created,modified",
+      "status": modify_pref_setting(),
 	  "isDefault":default_domain_value,
       "rn": "dom-"+dns_domain
     },
@@ -1400,7 +1649,7 @@ def assign_dns_to_oob():
   "dnsRsProfileToEpg": {
     "attributes": {
       "tDn": "uni/tn-mgmt/mgmtp-default/oob-default",
-      "status": "created,modified"
+      "status": modify_pref_setting()
     },
     "children": []
   }
@@ -1416,7 +1665,7 @@ def assign_pod_profile():
   "fabricRsPodPGrp": {
     "attributes": {
       "tDn": "uni/fabric/funcprof/podpgrp-default",
-      "status": "created,modified"
+      "status": modify_pref_setting()
     },
     "children": []
   }
@@ -1434,7 +1683,7 @@ def assign_bgp_asn(bgp_asn):
       "dn": "uni/fabric/bgpInstP-default/as",
       "asn": bgp_asn,
       "rn": "as",
-      "status": "created,modified"
+      "status": modify_pref_setting()
     },
     "children": []
   }
@@ -1452,7 +1701,7 @@ def assign_bgp_rr(bgp_rr_nodeid):
       "dn": "uni/fabric/bgpInstP-default/rr/node-"+bgp_rr_nodeid,
       "id": bgp_rr_nodeid,
       "rn": "node-"+bgp_rr_nodeid,
-      "status": "created,modified"
+      "status": modify_pref_setting()
     },
     "children": []
   }
@@ -1472,7 +1721,7 @@ def ifprof_cdp_enabled(name):
       "name": name,
       "adminSt": "enabled",
       "rn": "cdpIfP-"+name,
-      "status": "created,modified"
+      "status": modify_pref_setting()
     },
     "children": []
   }
@@ -1491,7 +1740,7 @@ def ifprof_cdp_disabled(name):
       "name": name,
       "adminSt": "disabled",
       "rn": "cdpIfP-"+name,
-      "status": "created,modified"
+      "status": modify_pref_setting()
     },
     "children": []
   }
@@ -1511,7 +1760,7 @@ def ifprof_lldp_enabled(name):
       "adminRxSt": "enabled",
       "adminTxSt": "enabled",
       "rn": "lldpIfP-"+name,
-      "status": "created,modified"
+      "status": modify_pref_setting()
     },
     "children": []
   }
@@ -1531,7 +1780,7 @@ def ifprof_lldp_disabled(name):
       "adminRxSt": "disabled",
       "adminTxSt": "disabled",
       "rn": "lldpIfP-"+name,
-      "status": "created,modified"
+      "status": modify_pref_setting()
     },
     "children": []
   }
@@ -1550,7 +1799,7 @@ def ifprof_1g(name):
       "name": name,
       "rn": "hintfpol-"+name,
       "speed": "1G",
-      "status": "created"
+      "status": modify_pref_setting()
     },
     "children": []
   }
@@ -1569,7 +1818,7 @@ def ifprof_10g(name):
       "name": name,
       "rn": "hintfpol-"+name,
       "speed": "10G",
-      "status": "created"
+      "status": modify_pref_setting()
     },
     "children": []
   }
@@ -1589,7 +1838,7 @@ def ifprof_lacp(name):
       "name": name,
       "mode": "active",
       "rn": "lacplagp-"+name,
-      "status": "created,modified"
+      "status": modify_pref_setting()
     },
     "children": []
   }
@@ -1608,7 +1857,7 @@ def ifprof_static(name):
       "ctrl": "fast-sel-hot-stdby,graceful-conv,susp-individual",
       "name": name,
       "rn": "lacplagp-"+name,
-      "status": "created,modified"
+      "status": modify_pref_setting()
     },
     "children": []
   }
@@ -1628,7 +1877,7 @@ def ifprof_mac(name):
       "name": name,
       "mode": "mac-pin",
       "rn": "lacplagp-"+name,
-      "status": "created,modified"
+      "status": modify_pref_setting()
     },
     "children": []
   }
@@ -1648,7 +1897,7 @@ def create_vlan_pool(name, vlanstart, vlanstop):
       "dn": "uni/infra/vlanns-["+name+"]-static",
       "name": name,
       "rn": "vlanns-["+name+"]-static",
-      "status": "created"
+      "status": modify_pref_setting()
     },
     "children": [
       {
@@ -1657,7 +1906,7 @@ def create_vlan_pool(name, vlanstart, vlanstop):
             "dn": "uni/infra/vlanns-["+name+"]-static/from-[vlan-"+vlanstart+"]-to-[vlan-"+vlanstop+"]",
             "from": "vlan-"+vlanstart+"",
             "rn": "from-[vlan-"+vlanstart+"]-to-[vlan-"+vlanstop+"]",
-            "status": "created",
+            "status": modify_pref_setting(),
             "to": "vlan-"+vlanstop+""
           },
           "children": []
@@ -1678,7 +1927,7 @@ def create_aaep(name, infravlanenabled):
   "infraInfra": {
     "attributes": {
       "dn": "uni/infra",
-      "status": "modified"
+      "status": modify_pref_setting()
     },
     "children": [
       {
@@ -1687,14 +1936,14 @@ def create_aaep(name, infravlanenabled):
             "dn": "uni/infra/attentp-"+name,
             "name": name,
             "rn": "attentp-"+name,
-            "status": "created"
+            "status": modify_pref_setting()
           },
           "children": [
             {
               "infraProvAcc": {
                 "attributes": {
                   "dn": "uni/infra/attentp-"+name+"/provacc",
-                  "status": "created"
+                  "status": modify_pref_setting()
                 },
                 "children": []
               }
@@ -1706,7 +1955,7 @@ def create_aaep(name, infravlanenabled):
         "infraFuncP": {
           "attributes": {
             "dn": "uni/infra/funcprof",
-            "status": "modified"
+            "status": modify_pref_setting()
           },
           "children": []
         }
@@ -1719,7 +1968,7 @@ def create_aaep(name, infravlanenabled):
   "infraInfra": {
     "attributes": {
       "dn": "uni/infra",
-      "status": "modified"
+      "status": modify_pref_setting()
     },
     "children": [
       {
@@ -1728,7 +1977,7 @@ def create_aaep(name, infravlanenabled):
             "dn": "uni/infra/attentp-"+name,
             "name": name,
             "rn": "attentp-"+name,
-            "status": "created"
+            "status": modify_pref_setting()
           },
           "children": []
         }
@@ -1737,7 +1986,7 @@ def create_aaep(name, infravlanenabled):
         "infraFuncP": {
           "attributes": {
             "dn": "uni/infra/funcprof",
-            "status": "modified"
+            "status": modify_pref_setting()
           },
           "children": []
         }
@@ -1762,7 +2011,7 @@ def create_physical_domain(name):
       "dn": "uni/phys-"+name,
       "name": name,
       "rn": "phys-"+name,
-      "status": "created"
+      "status": modify_pref_setting()
     },
     "children": []
   }
@@ -1778,7 +2027,7 @@ def associate_pd_aaep(aaepname, pdname):
 	data = {
   "infraRsDomP": {
     "attributes": {
-      "status": "created",
+      "status": modify_pref_setting(),
       "tDn": "uni/phys-"+pdname
     },
     "children": []
@@ -1795,7 +2044,7 @@ def associate_pd_vlanp(vlanpname, pdname):
 	data = {
   "infraRsVlanNs": {
     "attributes": {
-      "status": "created",
+      "status": modify_pref_setting(),
       "tDn": "uni/infra/vlanns-["+vlanpname+"]-static"
     },
     "children": []
@@ -1805,6 +2054,32 @@ def associate_pd_vlanp(vlanpname, pdname):
 	uri = "/api/node/mo/uni/phys-"+pdname+"/rsvlanNs.json"
 	desc = "Physical Domain \\ VLAN Pool Association"
 	return (uri, data, desc)
+
+
+def assign_mgmt_ip(podid, nodeid, cidr, gateway):
+	###JSON Data###
+	data = {
+  "mgmtRsOoBStNode": {
+    "attributes": {
+      "addr": cidr,
+      "gw": gateway,
+      "status": modify_pref_setting(),
+      "tDn": "topology/pod-"+podid+"/node-"+nodeid+""
+    },
+    "children": []
+  }
+}
+	###################
+	uri = "/api/node/mo/uni/tn-mgmt/mgmtp-default/oob-default/rsooBStNode-[topology/pod-"+podid+"/node-"+nodeid+"].json"
+	desc = "Assign Leaf/Spine OOB IP Assignment"
+	return (uri, data, desc)
+
+
+
+
+
+
+
 
 
 
