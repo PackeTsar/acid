@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-#####           Acid ACI Editor            #####
+#####       Acid (Quick ACI Editor)        #####
 #####       Written by John W Kerns        #####
 #####      http://blog.packetsar.com       #####
 #####  https://github.com/PackeTsar/acid   #####
@@ -9,7 +9,7 @@
 #### All imported libraries are native to (included in) Python 2.7.X+ and 3.6.X+ ####
 
 # Set some global variables here
-version = "0.5.0"
+version = "0.5.1"
 
 
 # Import libraries with names common to Python2 and Python3
@@ -340,11 +340,11 @@ class basicwindow:
 		self.prefsoverwriteheader = tk.Label(self.prefsoverwriteframe, text="Create/Modify Preferences", font=("Helvetica", 8, "bold"))
 		self.prefsoverwriteheader.grid(row=0, column=0)
 		self.prefsoverwritedesc = tk.Label(self.prefsoverwriteframe, 
-		text="If ticked, Acid will overwrite/modify existing, same-named policies with the new ones", 
-		font=("Helvetica", 8), wraplength=300)
+		text="Safe Mode will prevent Acid from overwriting/modifying already existing policies which have the same name as new ones", 
+		font=("Helvetica", 8), wraplength=350)
 		self.prefsoverwritedesc.grid(row=1, column=0)
-		self.prefsoverwritevar = tk.IntVar()
-		self.prefsoverwritebox = tk.Checkbutton(self.prefsoverwriteframe, text="Overwrite If Exists", variable=self.prefsoverwritevar)
+		self.prefsoverwritevar = tk.IntVar(value=1)
+		self.prefsoverwritebox = tk.Checkbutton(self.prefsoverwriteframe, text="Safe Mode", variable=self.prefsoverwritevar)
 		self.prefsoverwritebox.grid(row=2, column=0)
 		#####################
 		######## NTP ########
@@ -1558,9 +1558,9 @@ def check_ipv4(iptype, ipdata):
 
 
 def modify_pref_setting():
-	if gui.bw.prefsoverwritevar.get() == 0:
+	if gui.bw.prefsoverwritevar.get() == 1:
 		return "created"
-	elif gui.bw.prefsoverwritevar.get() == 1:
+	elif gui.bw.prefsoverwritevar.get() == 0:
 		return "created,modified"
 
 
