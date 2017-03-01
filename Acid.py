@@ -65,51 +65,58 @@ class topwindow:
 		master.grid_columnconfigure(1, weight=1)
 		master.grid_rowconfigure(6, weight=1)
 		####################
-		self.ipaddresslabel = tk.Label(master, text="Hostname or IP Address")
-		self.ipaddresslabel.grid(row=0, column=1, sticky=tk.E)
-		#########
-		self.ipaddressentry = tk.Entry(master, bd=5, width=35)
-		self.ipaddressentry.grid(row=0, column=2)
-		####################
-		#self.ipoutput = ""
+		self.entriesframe = tk.Frame(master, padx=20)
+		self.entriesframe.grid(row=0, column=1)
+		self.entriesframe.grid_columnconfigure(0, weight=1)
+		####
+		self.ipaddresslabel = tk.Label(self.entriesframe, text="Hostname or IP Address")
+		self.ipaddresslabel.grid(row=0, column=0, sticky=tk.E)
+		self.ipaddressentry = tk.Entry(self.entriesframe, bd=5, width=35)
+		self.ipaddressentry.grid(row=0, column=1)
+		####
 		self.ipoutputtext = tk.StringVar()
 		self.ipoutputtext.set("")
-		self.ipoutputlabel = tk.Label(master, textvariable=self.ipoutputtext)
-		self.ipoutputlabel.grid(row=1, column=2)
-		####################
-		####################
-		self.usernamelabel = tk.Label(master, text="Username")
-		self.usernamelabel.grid(row=2, column=1, sticky=tk.E)
-		#########
-		self.usernameentry = tk.Entry(master, bd=5, width=35)
-		self.usernameentry.grid(row=2, column=2)
-		####################
-		####################
-		self.passwordlabel = tk.Label(master, text="Password")
-		self.passwordlabel.grid(row=3, column=1, sticky=tk.E)
-		#########
-		self.passwordentry = tk.Entry(master, show="*", bd=5, width=35)
-		self.passwordentry.grid(row=3, column=2)
-		#########
-		self.viewpassbutton = tk.Button(master, text='View Password', command=self.view_password)
-		self.viewpassbutton.grid(row=3, column=3)
-		####################
-		self.clearlogbutton = tk.Button(master, text='Clear Log Window', command=self.clear_output)
-		self.clearlogbutton.grid(row=4, column=0, sticky=tk.W)
-		####################
+		self.ipoutputlabel = tk.Label(self.entriesframe, textvariable=self.ipoutputtext)
+		self.ipoutputlabel.grid(row=1, column=1)
+		####
+		self.usernamelabel = tk.Label(self.entriesframe, text="Username")
+		self.usernamelabel.grid(row=2, column=0, sticky=tk.E)
+		self.usernameentry = tk.Entry(self.entriesframe, bd=5, width=35)
+		self.usernameentry.grid(row=2, column=1)
+		####
+		self.passwordlabel = tk.Label(self.entriesframe, text="Password")
+		self.passwordlabel.grid(row=3, column=0, sticky=tk.E)
+		self.passwordentry = tk.Entry(self.entriesframe, show="*", bd=5, width=35)
+		self.passwordentry.grid(row=3, column=1)
+		self.viewpassbutton = tk.Button(self.entriesframe, text='Show Password', command=self.view_password)
+		self.viewpassbutton.grid(row=3, column=2)
+		self.viewpassbutton.config(height=1, width=12)
+		####
+		self.testbuttonframe = tk.Frame(self.entriesframe)
+		self.testbuttonframe.grid(row=4, column=0, columnspan=3, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.testbuttonframe.grid_columnconfigure(0, weight=1)
+		self.testbutton = tk.Button(self.testbuttonframe, text='Test Credentials', command=self._login)
+		self.testbutton.grid(row=4, column=1)
 		self.outputtext = tk.StringVar()
 		self.outputtext.set("")
-		self.outputlabel = tk.Label(master, textvariable=self.outputtext, wraplength=400)
-		self.outputlabel.grid(row=4, column=1, columnspan=2, rowspan=2)
+		self.outputlabel = tk.Label(self.testbuttonframe, textvariable=self.outputtext, wraplength=300)
+		self.outputlabel.grid(row=4, column=0)
 		####################
-		self.testbutton = tk.Button(master, text='Test Credentials', command=self._login)
-		self.testbutton.grid(row=0, column=3)
-		####################
-		self.basicbutton = tk.Button(master, text='Basic Settings', command=self.start_basicwindow)
-		self.basicbutton.grid(row=1, column=3)
-		####################
-		self.closebutton = tk.Button(master, text='Close', command=self.close)
-		self.closebutton.grid(row=4, column=3)
+		self.buttonsframe = tk.Frame(master, padx=10)
+		self.buttonsframe.grid(row=0, column=2)
+		self.buttonsframe.grid_columnconfigure(0, weight=1)
+		####
+		self.basicbutton = tk.Button(self.buttonsframe, text='Basic Settings', command=self.start_basicwindow)
+		self.basicbutton.grid(row=0, column=0)
+		####
+		self.sysinfobutton = tk.Button(self.buttonsframe, text='System Info', command=self.start_sysinfowindow)
+		self.sysinfobutton.grid(row=1, column=0)
+		####
+		self.clearlogbutton = tk.Button(self.buttonsframe, text='Clear Log Window', command=self.clear_output)
+		self.clearlogbutton.grid(row=2, column=0)
+		####
+		self.closebutton = tk.Button(self.buttonsframe, text='Close', command=self.close)
+		self.closebutton.grid(row=3, column=0)
 		####################
 		self.textboxframe = tk.Frame(master, borderwidth=4, relief=tk.RAISED)
 		self.textboxframe.grid(row=6, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
@@ -131,7 +138,7 @@ class topwindow:
 		self.weblink.bind("<Button-1>", self.open_web)
 		####################
 		self.versionlabel = tk.Label(master, text=r"Version "+version,)
-		self.versionlabel.grid(row=7, column=4)
+		self.versionlabel.grid(row=7, column=2)
 		####################
 		# Uncomment and enter IP, username, and password to auto-populate Acid on start
 		# Makes testing much faster as you don't have to enter creds for every test
@@ -221,6 +228,13 @@ class topwindow:
 		except AttributeError:
 			self.bwopen = False
 			self.start_basicwindow()
+	def start_sysinfowindow(self):
+		if gui.login_check():
+			pull_aci_info()
+			#poddict = get_pod_list()['data']
+			#for podname in poddict:
+			#	podid = poddict[podname]['id']
+			#	print(get_pod_info(podid=podid))
 	def write_output(self, text):
 		self.textbox.config(state=tk.NORMAL)
 		self.textbox.insert(tk.END, ("\n"+str(text)))
@@ -283,21 +297,6 @@ class topwindow:
 	def close(self):
 		self.master.destroy()
 
-
-class AutoScrollbar(tk.Scrollbar):
-    # A scrollbar that hides itself if it's not needed.
-    # Only works if you use the grid geometry manager!
-    def set(self, lo, hi):
-        if float(lo) <= 0.0 and float(hi) >= 1.0:
-            # grid_remove is currently missing from Tkinter!
-            self.tk.call("grid", "remove", self)
-        else:
-            self.grid()
-        tk.Scrollbar.set(self, lo, hi)
-    def pack(self, **kw):
-        raise TclError("cannot use pack with this widget")
-    def place(self, **kw):
-        raise TclError("cannot use place with this widget")
 
 #### GUI window used for doing initial, basic, one-time setup ####
 class basicwindow:
@@ -906,32 +905,12 @@ class basicwindow:
 				gui.write_output(gui.header(35, "DNS Server Push Complete", 2))
 	def update_pod_list(self):
 		if gui.login_check():
-			self.podupdatetext.set("Updating Pod List...")
-			gui.write_output("\n\n\n"+gui.header(35, "Updating Pod List", 2))
-			self.pushurl = gui.call.baseurl+"/api/node/class/fabricPod.json"
-			gui.write_send_header_body(self.pushurl, "<No Body>")
-			self.response = gui.get(url=self.pushurl)
-			rawdata = self.response.read()
-			rawheader = self.response.info()
-			gui.write_response_header_body((rawheader, rawdata))
-			data = json.loads(rawdata)
-			index = 0
-			self.pods = {}
-			podlist = []
-			if self.response.getcode() == 200:
-				for each in range(int(data['totalCount'])):
-					podid = data['imdata'][index]['fabricPod']['attributes']['id']
-					podname = "Pod "+podid
-					self.pods.update({podname:{"id": podid}})
-					podlist.append(podname)
-					index += 1
-				self.podmenu['values'] = podlist
-				self.podupdatetext.set("List Updated")
-				self.podupdatelabel.configure(fg="green4")
-			else:
-				self.podupdatetext.set("Update Failed")
-				self.podupdatelabel.configure(fg="red")
-			gui.write_output(gui.header(35, "Pod List Update Complete", 2))
+			response = get_pod_list()
+			self.pods = response
+			podlist = list(self.pods)
+			self.podmenu['values'] = podlist
+			self.podupdatetext.set("List Updated")
+			self.podupdatelabel.configure(fg="green4")
 	def update_switch_list(self, updatetextobj, updatelabelobj, updatemenuobj):
 		if gui.login_check():
 			podname = self.podmenu.get()
@@ -940,38 +919,20 @@ class basicwindow:
 				updatelabelobj.configure(fg="red")
 				return None
 			else:
-				poddata = self.get_pod_info(podname)
+				podid = self.pods[podname]["id"]
+				poddata = get_pod_info(podid)
 				self.pods[podname].update({"nodes": poddata})
 				nodelist = []
 				for node in poddata:
 					nodefriendlyname = ""
 					nodefriendlyname += "Node: "+poddata[node]['id']
 					nodefriendlyname += " | "+poddata[node]['name']
+					nodefriendlyname += " ("+poddata[node]['role']+")"
 					nodelist.append(nodefriendlyname)
 					self.pods[podname]['nodes'][node].update({"nodefriendlyname": nodefriendlyname})
 				updatemenuobj['values'] = nodelist
 				updatetextobj.set("List Updated")
 				updatelabelobj.configure(fg="green4")
-	def get_pod_info(self, podname="Pod 1"):
-		if gui.login_check():
-			podid = self.pods[podname]["id"]
-			gui.write_output("\n\n\n"+gui.header(35, "Getting Pod "+podid+" Info", 2))
-			decoquery = 'query-target=children&target-subtree-class=fabricNode&query-target-filter=and(ne(fabricNode.role,"controller"))'
-			query = quote_plus(decoquery)
-			self.pushurl = gui.call.baseurl+"/api/node/mo/topology/pod-"+podid+".json?"+query
-			gui.write_send_header_body(self.pushurl, "<No Body>")
-			self.response = gui.get(url=self.pushurl)
-			rawdata = self.response.read()
-			rawheader = self.response.info()
-			gui.write_response_header_body((rawheader, rawdata))
-			data = json.loads(rawdata)
-			index = 0
-			nodes = {}
-			for each in range(int(data['totalCount'])):
-				atts = data['imdata'][index]['fabricNode']['attributes']
-				nodes.update({atts['id']: atts})
-				index += 1
-			return nodes
 	def submit_pod_prof(self):
 		if gui.login_check():
 			self.podproftext.set("Attempting Post...")
@@ -1256,7 +1217,7 @@ class basicwindow:
 			
 			
 			
-#####################################3
+#####################################
 def check_ipdns_entry(entryobj, labelobj, textobj):
 	textobj.set("")
 	if entry_is_empty(entryobj):
@@ -1389,6 +1350,7 @@ def check_vlan_id(entryobj, labelobj, textobj):
 			return False
 
 ########################################################
+
 class acicalls:
 	def __init__(self, username="admin", password="admin", hostname="192.168.1.1"):
 		self.username = username
@@ -1413,6 +1375,8 @@ class acicalls:
 				return {"status": "failed", "response": exception, "code": 0, "description": "Hostname lookup failed. Please recheck hostname or DNS lookup capability.", "reason": "badip"}
 			elif "http error" in str(exception).lower():
 				return {"status": "failed", "response": exception, "code": exception.getcode(), "description": "A login error occured. Please recheck credentials: " + str(exception), "reason": "badcreds"}
+			else:
+				return {"status": "failed", "response": exception, "code": 0, "description": exception, "reason": "unknown"}
 	def json_convert(self, data={"somedata": "in JSON format"}):
 		self.data = data
 		self.data = json.dumps(self.data)
@@ -1431,8 +1395,100 @@ class acicalls:
 		except Exception as exception:
 			return exception
 
+########################################################
 
+def get_calls(pushurl, message):
+	gui.write_output("\n\n\n"+gui.header(35, message, 2))
+	gui.write_send_header_body(pushurl, "<No Body>")
+	response = gui.get(url=pushurl)
+	rawdata = response.read()
+	rawheader = response.info()
+	gui.write_response_header_body((rawheader, rawdata))
+	return json.loads(rawdata)
 
+def pull_aci_info():
+	result = []
+	poddict = get_pod_list()
+	for pod in poddict:
+		podid = poddict[pod]['id']
+		nodes = get_all_nodes(podid=podid)
+		for node in nodes:
+			nodedata = node
+			nodedata.update(get_node_info(podid, node['id']))
+			if nodedata['role'] == 'controller':
+				nodedata.update(get_controller_fw(podid, node['id']))
+			else:
+				nodedata.update(get_switch_fw(podid, node['id']))
+			result.append(node)
+		columnorder = ["name", "id", "model", "serial", "oobMgmtAddr"]
+		gui.write_output("\n\n\n"+gui.header(35, "System Info", 2))
+		gui.write_output("\n\n\n"+make_table(columnorder, result))
+			
+
+def get_pod_list():
+	pushurl = gui.call.baseurl+"/api/node/class/fabricPod.json"
+	message = "Updating Pod List"
+	data = get_calls(pushurl, message)
+	index = 0
+	result = {}
+	for each in range(int(data['totalCount'])):
+		podid = data['imdata'][index]['fabricPod']['attributes']['id']
+		podname = "Pod "+podid
+		result.update({podname:{"id": podid}})
+		index += 1
+	return result
+
+def get_all_nodes(podid="1"):
+	pushurl = gui.call.baseurl+"/api/node/mo/topology/pod-"+podid+".json?query-target=children&target-subtree-class=fabricNode"
+	message = "Getting Node Info"
+	data = get_calls(pushurl, message)
+	result = []
+	for node in data["imdata"]:
+		result.append(node["fabricNode"]["attributes"])
+	columnorder = ['name', 'model', 'serial', 'role']
+	return result
+
+def get_pod_info(podid="1"):
+	decoquery = 'query-target=children&target-subtree-class=fabricNode&query-target-filter=and(ne(fabricNode.role,"controller"))'
+	query = quote_plus(decoquery)
+	pushurl = gui.call.baseurl+"/api/node/mo/topology/pod-"+podid+".json?"+query
+	message = "Getting Pod "+podid+" Info"
+	data = get_calls(pushurl, message)
+	index = 0
+	nodes = {}
+	for each in range(int(data['totalCount'])):
+		atts = data['imdata'][index]['fabricNode']['attributes']
+		nodes.update({atts['id']: atts})
+		index += 1
+	return nodes
+	
+def get_node_info(podid, nodeid):
+	pushurl = gui.call.baseurl+"/api/node/mo/topology/pod-"+podid+"/node-"+nodeid+".json?query-target=children&target-subtree-class=topSystem"
+	message = "Getting More Info on Node "+nodeid
+	data = get_calls(pushurl, message)
+	return data["imdata"][0]["topSystem"]["attributes"]
+
+def get_switch_fw(podid, nodeid):
+	pushurl = gui.call.baseurl+"/api/node/class/topology/pod-"+podid+"/node-"+nodeid+"/firmwareRunning.json"
+	message = "Getting Firmware for Node "+nodeid
+	data = get_calls(pushurl, message)
+	result = {}
+	attlist = ["version", "peVer", "ksFile"]
+	for att in attlist:
+		result.update({att: data["imdata"][0]["firmwareRunning"]["attributes"][att]})
+	return result
+
+def get_controller_fw(podid, nodeid):
+	pushurl = gui.call.baseurl+"/api/node/class/topology/pod-"+podid+"/node-"+nodeid+"/firmwareCtrlrRunning.json"
+	message = "Getting Firmware for Node "+nodeid
+	data = get_calls(pushurl, message)
+	result = {}
+	attlist = ["version"]
+	for att in attlist:
+		result.update({att: data["imdata"][0]["firmwareCtrlrRunning"]["attributes"][att]})
+	return result
+
+	
 
 ################################## C H E C K   D O M A I N   N A M E ##################################
 #######################################################################################################
@@ -1554,6 +1610,85 @@ def check_ipv4(iptype, ipdata):
 #
 #######################################################################################################
 #######################################################################################################
+
+
+
+
+######################################### M A K E   T A B L E #########################################
+#######################################################################################################
+
+##### Create a table of data from a list of dictionaries where the key in each dict is the header and the val is the column value #####
+##### The tabledata input is the list of dictionaries and the column order is an ordered list of how the columns should be displayed #####
+##### The output is a printable table with automatically spaced columns, centered headers and values #####
+
+def make_table(columnorder, tabledata):
+	##### Check and fix input type #####
+	if type(tabledata) != type([]): # If tabledata is not a list
+		tabledata = [tabledata] # Nest it in a list
+	##### Set seperators and spacers #####
+	tablewrap = "#" # The character used to wrap the table
+	headsep = "=" # The character used to seperate the headers from the table values
+	columnsep = "|" # The character used to seperate each value in the table
+	columnspace = "  " # The amount of space between the largest value and its column seperator
+	##### Generate a dictionary which contains the length of the longest value or head in each column #####
+	datalengthdict = {} # Create the dictionary for storing the longest values
+	for columnhead in columnorder: # For each column in the columnorder input
+		datalengthdict.update({columnhead: len(columnhead)}) # Create a key in the length dict with a value which is the length of the header
+	for row in tabledata: # For each row entry in the tabledata list of dicts
+		for item in columnorder: # For column entry in that row
+			if len(re.sub(r'\x1b[^m]*m', "",  row[item])) > datalengthdict[item]: # If the length of this column entry is longer than the current longest entry
+				datalengthdict[item] = len(row[item]) # Then change the value of entry
+	##### Calculate total table width #####
+	totalwidth = 0 # Initialize at 0
+	for columnwidth in datalengthdict: # For each of the longest column values
+		totalwidth += datalengthdict[columnwidth] # Add them all up into the totalwidth variable
+	totalwidth += len(columnorder) * len(columnspace) * 2 # Account for double spaces on each side of each column value
+	totalwidth += len(columnorder) - 1 # Account for seperators for each row entry minus 1
+	totalwidth += 2 # Account for start and end characters for each row
+	##### Build Header #####
+	result = tablewrap * totalwidth + "\n" + tablewrap # Initialize the result with the top header, line break, and beginning of header line
+	columnqty = len(columnorder) # Count number of columns
+	for columnhead in columnorder: # For each column header value
+		spacing = {"before": 0, "after": 0} # Initialize the before and after spacing for that header value before the columnsep
+		spacing["before"] = int((datalengthdict[columnhead] - len(columnhead)) / 2) # Calculate the before spacing
+		spacing["after"] = int((datalengthdict[columnhead] - len(columnhead)) - spacing["before"]) # Calculate the after spacing
+		result += columnspace + spacing["before"] * " " + columnhead + spacing["after"] * " " + columnspace # Add the header entry with spacing
+		if columnqty > 1: # If this is not the last entry
+			result += columnsep # Append a column seperator
+		del spacing # Remove the spacing variable so it can be used again
+		columnqty -= 1 # Remove 1 from the counter to keep track of when we hit the last column
+	del columnqty # Remove the column spacing variable so it can be used again
+	result += tablewrap + "\n" + tablewrap + headsep * (totalwidth - 2) + tablewrap + "\n" # Add bottom wrapper to header
+	##### Build table contents #####
+	result += tablewrap # Add the first wrapper of the value table
+	for row in tabledata: # For each row (dict) in the tabledata input
+		columnqty = len(columnorder) # Set a column counter so we can detect the last entry in this row
+		for column in columnorder: # For each value in this row, but using the correct order from column order
+			spacing = {"before": 0, "after": 0} # Initialize the before and after spacing for that header value before the columnsep
+			spacing["before"] = int((datalengthdict[column] - len(re.sub(r'\x1b[^m]*m', "",  row[column]))) / 2) # Calculate the before spacing
+			spacing["after"] = int((datalengthdict[column] - len(re.sub(r'\x1b[^m]*m', "",  row[column]))) - spacing["before"]) # Calculate the after spacing
+			result += columnspace + spacing["before"] * " " + row[column] + spacing["after"] * " " + columnspace # Add the entry to the row with spacing
+			if columnqty == 1: # If this is the last entry in this row
+				result += tablewrap + "\n" + tablewrap # Add the wrapper, a line break, and start the next row
+			else: # If this is not the last entry in the row
+				result += columnsep # Add a column seperator
+			del spacing # Remove the spacing settings for this entry 
+			columnqty -= 1 # Keep count of how many row values are left so we know when we hit the last one
+	result += tablewrap * (totalwidth - 1) # When all rows are complete, wrap the table with a trailer
+	return result
+
+########################################## USAGE AND EXAMPLES #########################################
+#
+#>>> tabledataindict = [{"key1": "val111111111", "key2": "val123", "key3": "v"}, {"key1": "val21", "key2": "val22", "key3": "v"}, {"key1": "val31", "key2": "val32", "key3": "va"}, {"key1": "val41", "key2": "val4233", "key3": "va"}, {"key1": "val51", "key2": "val52", "key3": "vasomething longer"}]
+#
+#>>> ordercolumnslike = ["key1", "key2", "key3"]
+#
+#>>> print(make_table(ordercolumnslike, tabledataindict))
+#
+#######################################################################################################
+#######################################################################################################
+
+
 
 
 
