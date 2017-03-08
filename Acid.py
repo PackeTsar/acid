@@ -9,16 +9,18 @@
 #### All imported libraries are native to (included in) Python 2.7.X+ and 3.6.X+ ####
 
 # Set some global variables here
-version = "0.5.1"
+version = "0.5.2"
 
 
 # Import libraries with names common to Python2 and Python3
 import re
 import ssl
 import json
+import time
 import urllib
 import inspect
 import webbrowser
+
 
 # Import libraries with names unique Python2 and Python3
 try:
@@ -61,18 +63,22 @@ class topwindow:
 		master.tk.call('wm','iconphoto',self.master._w,self.logo)
 		self.logolabel.grid(row=0, column=0, rowspan=4, sticky=tk.W+tk.N)
 		####################
-		master.grid_columnconfigure(0, weight=1)
 		master.grid_columnconfigure(1, weight=1)
+		master.grid_columnconfigure(2, weight=1)
 		master.grid_rowconfigure(6, weight=1)
 		####################
-		self.entriesframe = tk.Frame(master, padx=20)
-		self.entriesframe.grid(row=0, column=1)
+		self.entriesframe = tk.Frame(master, padx=20, borderwidth=1, relief=tk.SUNKEN)
+		self.entriesframe.grid(row=0, column=1, sticky=tk.N+tk.S+tk.W+tk.E)
 		self.entriesframe.grid_columnconfigure(0, weight=1)
 		####
-		self.ipaddresslabel = tk.Label(self.entriesframe, text="Hostname or IP Address")
-		self.ipaddresslabel.grid(row=0, column=0, sticky=tk.E)
-		self.ipaddressentry = tk.Entry(self.entriesframe, bd=5, width=35)
+		self.ipaddressframe = tk.Frame(self.entriesframe)
+		self.ipaddressframe.grid(row=0, column=0, columnspan=3)
+		self.ipaddressframe.grid_columnconfigure(0, weight=1)
+		self.ipaddresslabel = tk.Label(self.ipaddressframe, text="Hostname or IP Address")
+		self.ipaddresslabel.grid(row=0, column=0)
+		self.ipaddressentry = tk.Entry(self.ipaddressframe, bd=5, width=35)
 		self.ipaddressentry.grid(row=0, column=1)
+		####
 		####
 		self.ipoutputtext = tk.StringVar()
 		self.ipoutputtext.set("")
@@ -89,34 +95,51 @@ class topwindow:
 		self.passwordentry = tk.Entry(self.entriesframe, show="*", bd=5, width=35)
 		self.passwordentry.grid(row=3, column=1)
 		self.viewpassbutton = tk.Button(self.entriesframe, text='Show Password', command=self.view_password)
-		self.viewpassbutton.grid(row=3, column=2)
+		self.viewpassbutton.grid(row=3, column=2, sticky=tk.W)
 		self.viewpassbutton.config(height=1, width=12)
 		####
 		self.testbuttonframe = tk.Frame(self.entriesframe)
 		self.testbuttonframe.grid(row=4, column=0, columnspan=3, sticky=tk.N+tk.S+tk.W+tk.E)
 		self.testbuttonframe.grid_columnconfigure(0, weight=1)
 		self.testbutton = tk.Button(self.testbuttonframe, text='Test Credentials', command=self._login)
-		self.testbutton.grid(row=4, column=1)
+		self.testbutton.grid(row=4, column=1, sticky=tk.W)
 		self.outputtext = tk.StringVar()
 		self.outputtext.set("")
 		self.outputlabel = tk.Label(self.testbuttonframe, textvariable=self.outputtext, wraplength=300)
 		self.outputlabel.grid(row=4, column=0)
 		####################
-		self.buttonsframe = tk.Frame(master, padx=10)
-		self.buttonsframe.grid(row=0, column=2)
+		self.buttonsframe = tk.Frame(master, padx=10, borderwidth=1, relief=tk.SUNKEN)
+		self.buttonsframe.grid(row=0, column=2, sticky=tk.N+tk.S+tk.W+tk.E)
 		self.buttonsframe.grid_columnconfigure(0, weight=1)
 		####
-		self.basicbutton = tk.Button(self.buttonsframe, text='Basic Settings', command=self.start_basicwindow)
-		self.basicbutton.grid(row=0, column=0)
+		self.safemodeframe = tk.Frame(self.buttonsframe, borderwidth=1, relief=tk.SUNKEN, padx=10)
+		self.safemodeframe.grid(row=0, column=0, rowspan=5)
+		self.safemodeframe.grid_columnconfigure(0, weight=1)
+		self.safemodedesc = tk.Label(self.safemodeframe, 
+		text="Safe Mode will prevent Acid from overwriting/modifying already existing policies which have the same name as new ones", 
+		font=("Helvetica", 8), wraplength=150)
+		self.safemodedesc.grid(row=1, column=0)
+		self.safemodevar = tk.IntVar(value=1)
+		self.safemodebox = tk.Checkbutton(self.safemodeframe, text="Safe Mode", variable=self.safemodevar, font=("Helvetica", 8, "bold"))
+		self.safemodebox.grid(row=0, column=0)
 		####
 		self.sysinfobutton = tk.Button(self.buttonsframe, text='System Info', command=self.start_sysinfowindow)
-		self.sysinfobutton.grid(row=1, column=0)
+		self.sysinfobutton.grid(row=0, column=1)
+		self.sysinfoopen = False
+		####
+		self.basicbutton = tk.Button(self.buttonsframe, text='Basic Settings', command=self.start_basicwindow)
+		self.basicbutton.grid(row=1, column=1)
+		self.bwopen = False
+		####
+		self.portsbutton = tk.Button(self.buttonsframe, text='Configure Ports', command=self.start_ports)
+		self.portsbutton.grid(row=2, column=1)
+		self.portsopen = False
 		####
 		self.clearlogbutton = tk.Button(self.buttonsframe, text='Clear Log Window', command=self.clear_output)
-		self.clearlogbutton.grid(row=2, column=0)
+		self.clearlogbutton.grid(row=3, column=1)
 		####
 		self.closebutton = tk.Button(self.buttonsframe, text='Close', command=self.close)
-		self.closebutton.grid(row=3, column=0)
+		self.closebutton.grid(row=4, column=1)
 		####################
 		self.textboxframe = tk.Frame(master, borderwidth=4, relief=tk.RAISED)
 		self.textboxframe.grid(row=6, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
@@ -218,23 +241,26 @@ class topwindow:
 			self.json = json.dumps(self.json, indent=4, sort_keys=True)
 			self.write_output(str(self.json))
 	def start_basicwindow(self):
-		try:
-			if self.bwopen == False:
-				self.bw = basicwindow(root)
-				self.bwopen = True
-			elif self.bwopen == True:
-				self.bw.close()
-				self.bwopen = False
-		except AttributeError:
+		if self.bwopen == False:
+			self.bw = basicwindow(root)
+			self.bwopen = True
+		elif self.bwopen == True:
+			self.bw.close()
 			self.bwopen = False
-			self.start_basicwindow()
 	def start_sysinfowindow(self):
-		if gui.login_check():
-			pull_aci_info()
-			#poddict = get_pod_list()['data']
-			#for podname in poddict:
-			#	podid = poddict[podname]['id']
-			#	print(get_pod_info(podid=podid))
+		if self.sysinfoopen == False:
+			self.sysinfo = systeminfo(root)
+			self.sysinfoopen = True
+		elif self.sysinfoopen == True:
+			self.sysinfo.close()
+			self.sysinfoopen = False
+	def start_ports(self):
+		if self.portsopen == False:
+			self.ports = ports(root)
+			self.portsopen = True
+		elif self.portsopen == True:
+			self.ports.close()
+			self.portsopen = False
 	def write_output(self, text):
 		self.textbox.config(state=tk.NORMAL)
 		self.textbox.insert(tk.END, ("\n"+str(text)))
@@ -314,37 +340,11 @@ class basicwindow:
 		self.bwcanvas.configure(yscrollcommand = self.bwscroll.set)
 		self.bwscroll.config(command=self.bwcanvas.yview)
 		self.interior_id = self.bwcanvas.create_window(0, 0, window=self.bw, anchor=tk.N+tk.W)
-		self.bwcanvas.bind('<Configure>', self.on_configure)
+		self.bwcanvas.bind('<Configure>', lambda event, a=self.bwcanvas, b=self.interior_id:self.on_configure(event, a, b))
 		self.bwcanvas.bind_all("<MouseWheel>", self.on_mousewheel)
 		self.bwcanvas.configure(scrollregion=self.bwcanvas.bbox("all"))
-		self.bwcanvas.itemconfig(self.interior_id, height=self.bw.winfo_vrootheight())
-		#######################
-		######## PREFS ########
-		self.prefsframe = tk.Frame(self.bw, borderwidth=4, relief=tk.RAISED)
-		self.prefsframe.pack(fill=tk.BOTH, expand=tk.YES)
-		self.prefsframe.grid_columnconfigure(0, weight=1)
-		self.prefsheadframe = tk.Frame(self.prefsframe)
-		self.prefsheadframe.grid(row=0, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
-		self.prefsheadframe.grid_columnconfigure(0, weight=1)
-		self.prefsheadframe.grid_rowconfigure(0, weight=1)
-		self.prefsheader = tk.Label(self.prefsheadframe, text="Step 0: Set Acid Preferences", font=("Helvetica", 12, "bold"))
-		self.prefsheader.grid(row=0, column=0)
-		######
-		self.prefsoverwriteframe = tk.Frame(self.prefsframe, borderwidth=1, relief=tk.SUNKEN)
-		self.prefsoverwriteframe.grid(row=1, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
-		self.prefsoverwriteframe.grid_columnconfigure(0, weight=1)
-		self.prefsoverwriteframe.grid_rowconfigure(0, weight=1)
-		self.prefsoverwriteframe.grid_rowconfigure(1, weight=1)
-		self.prefsoverwriteframe.grid_rowconfigure(2, weight=1)
-		self.prefsoverwriteheader = tk.Label(self.prefsoverwriteframe, text="Create/Modify Preferences", font=("Helvetica", 8, "bold"))
-		self.prefsoverwriteheader.grid(row=0, column=0)
-		self.prefsoverwritedesc = tk.Label(self.prefsoverwriteframe, 
-		text="Safe Mode will prevent Acid from overwriting/modifying already existing policies which have the same name as new ones", 
-		font=("Helvetica", 8), wraplength=350)
-		self.prefsoverwritedesc.grid(row=1, column=0)
-		self.prefsoverwritevar = tk.IntVar(value=1)
-		self.prefsoverwritebox = tk.Checkbutton(self.prefsoverwriteframe, text="Safe Mode", variable=self.prefsoverwritevar)
-		self.prefsoverwritebox.grid(row=2, column=0)
+		self.bwcanvas.itemconfig(self.interior_id, height=1080)
+		self.basicwindow.wm_protocol("WM_DELETE_WINDOW", self.close)
 		#####################
 		######## NTP ########
 		self.ntpframe = tk.Frame(self.bw, borderwidth=4, relief=tk.RAISED)
@@ -531,7 +531,7 @@ class basicwindow:
 		self.bgpasnlabel.grid(row=0, column=0, sticky="en")
 		self.bgprrvar = tk.StringVar(self.bgprrframe)
 		self.bgprrvar.set("Select Route Reflector (RR) Node")
-		self.bgprrmenu = ttk.Combobox(self.bgprrframe, textvariable=self.bgprrvar, width=35)
+		self.bgprrmenu = ttk.Combobox(self.bgprrframe, textvariable=self.bgprrvar, width=45)
 		self.bgprrmenu.state(['readonly'])
 		self.bgprrmenu.grid(row=0, column=1)
 		self.bgprrupdate = tk.Button(self.bgprrframe, text='Update List', 
@@ -557,7 +557,7 @@ class basicwindow:
 		self.ifprofheadframe = tk.Frame(self.ifprofframe)
 		self.ifprofheadframe.grid(row=0, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
 		self.ifprofheadframe.grid_columnconfigure(0, weight=1)
-		self.ifprofheader = tk.Label(self.ifprofheadframe, text="Step 5: Create Interface Profiles", font=("Helvetica", 12, "bold"))
+		self.ifprofheader = tk.Label(self.ifprofheadframe, text="Step 5: Create Interface Policies", font=("Helvetica", 12, "bold"))
 		self.ifprofheader.grid(row=0, column=0)
 		######
 		self.ifprofdisframe = tk.Frame(self.ifprofframe, borderwidth=1, relief=tk.SUNKEN)
@@ -620,7 +620,7 @@ class basicwindow:
 		self.ifprofpcframe.grid(row=1, column=2, sticky=tk.N+tk.S+tk.W+tk.E)
 		self.ifprofpcframe.grid_columnconfigure(0, weight=1)
 		self.ifprofpcframe.grid_columnconfigure(1, weight=1)
-		self.ifprofpcheader = tk.Label(self.ifprofpcframe, text="Port-Channel Profiles", font=("Helvetica", 8, "bold"))
+		self.ifprofpcheader = tk.Label(self.ifprofpcframe, text="Port-Channel Policies", font=("Helvetica", 8, "bold"))
 		self.ifprofpcheader.grid(row=0, column=0, columnspan=2)
 		self.ifproflacpvar = tk.IntVar(value=1)
 		self.ifproflacp = tk.Checkbutton(self.ifprofpcframe, text="LACP Active", 
@@ -648,7 +648,7 @@ class basicwindow:
 		self.ifprofsubframe.grid(row=2, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
 		self.ifprofsubframe.grid_columnconfigure(0, weight=1)
 		self.ifprofsubframe.grid_columnconfigure(1, weight=1)
-		self.ifprofsubmit = tk.Button(self.ifprofsubframe, text='Add Selected Interface Profiles', command=self.submit_if_profiles)
+		self.ifprofsubmit = tk.Button(self.ifprofsubframe, text='Add Selected Interface Policies', command=self.submit_if_policies)
 		self.ifprofsubmit.grid(row=0, column=0, sticky=tk.E)
 		self.ifprofchecktext = tk.StringVar()
 		self.ifprofchecktext.set("")
@@ -756,7 +756,7 @@ class basicwindow:
 		######
 		self.mgmtipselframe = tk.Frame(self.mgmtipframe)
 		self.mgmtipselframe.grid(row=1, column=0, columnspan=101, sticky=tk.N+tk.S+tk.W+tk.E)
-		self.mgmtipselframe.grid_columnconfigure(0, weight=1)
+		self.mgmtipselframe.grid_columnconfigure(0, weight=2)
 		self.mgmtipselframe.grid_columnconfigure(1, weight=1)
 		self.mgmtipselframe.grid_columnconfigure(2, weight=1)
 		self.mgmtipselframe.grid_columnconfigure(3, weight=1)
@@ -764,7 +764,7 @@ class basicwindow:
 		self.mgmtipnodelabel = tk.Label(self.mgmtipselframe, text="Leaf/Spine Switch")
 		self.mgmtipnodelabel.grid(row=0, column=0)
 		self.mgmtipnodevar.set("Select Switch")
-		self.mgmtipmenu = ttk.Combobox(self.mgmtipselframe, textvariable=self.mgmtipnodevar, width=25)
+		self.mgmtipmenu = ttk.Combobox(self.mgmtipselframe, textvariable=self.mgmtipnodevar, width=45)
 		self.mgmtipmenu.state(['readonly'])
 		self.mgmtipmenu.grid(row=1, column=0)
 		######
@@ -809,9 +809,9 @@ class basicwindow:
 		self.closebutton.pack()
 		#######################
 		#######################
-	def on_configure(self, event):
-		self.bwcanvas.itemconfig(self.interior_id, width=event.width)
-		self.bwcanvas.configure(scrollregion=self.bwcanvas.bbox('all'))
+	def on_configure(self, event, canvasobject, window):
+		canvasobject.itemconfig(window, width=event.width)
+		canvasobject.configure(scrollregion=canvasobject.bbox('all'))
 	def on_mousewheel(self, event):
 		self.bwcanvas.yview_scroll(int(-1*(event.delta/120)), "units")
 	def submit_ntp(self):
@@ -831,7 +831,7 @@ class basicwindow:
 				else:
 					self.ntpstatustext.set("Post Failed")
 					self.ntpstatuslabel.configure(fg="red")
-				gui.write_output(gui.header(35, "NTP Push Complete", 2))
+				gui.write_output(gui.header(35, "Push Complete", 2))
 	def submit_dns_server(self):
 		if check_ip_entry(self.dnssvrentry, self.dnssvrchecklabel, self.dnssvrchecktext):
 			if gui.login_check():
@@ -849,7 +849,7 @@ class basicwindow:
 				else:
 					self.dnssvrstatustext.set("Post Failed")
 					self.dnssvrstatuslabel.configure(fg="red")
-				gui.write_output(gui.header(35, "DNS Server Push Complete", 2))
+				gui.write_output(gui.header(35, "Push Complete", 2))
 	def submit_dns_domain(self):
 		if check_dns_entry(self.dnsdmnentry, self.dnsdmnchecklabel, self.dnsdmnchecktext):
 			if gui.login_check():
@@ -867,7 +867,7 @@ class basicwindow:
 				else:
 					self.dnsdmnstatustext.set("Post Failed")
 					self.dnsdmnstatuslabel.configure(fg="red")
-				gui.write_output(gui.header(35, "DNS Server Push Complete", 2))
+				gui.write_output(gui.header(35, "Push Complete", 2))
 	def submit_assign_dns(self):
 		if gui.login_check():
 			self.dnsassignstatustext.set("Attempting Post...")
@@ -884,7 +884,7 @@ class basicwindow:
 			else:
 				self.dnsassignstatustext.set("Post Failed")
 				self.dnsassignstatuslabel.configure(fg="red")
-			gui.write_output(gui.header(35, "DNS Server Push Complete", 2))
+			gui.write_output(gui.header(35, "Push Complete", 2))
 	def submit_assign_bgpasn(self):
 		if check_bgpasn_entry(self.bgpasnentry, self.bgpasnchecklabel, self.bgpasnchecktext):
 			if gui.login_check():
@@ -902,7 +902,7 @@ class basicwindow:
 				else:
 					self.bgpasnstatustext.set("Post Failed")
 					self.bgpasnstatuslabel.configure(fg="red")
-				gui.write_output(gui.header(35, "DNS Server Push Complete", 2))
+				gui.write_output(gui.header(35, "Push Complete", 2))
 	def update_pod_list(self):
 		if gui.login_check():
 			response = get_pod_list()
@@ -949,7 +949,7 @@ class basicwindow:
 			else:
 				self.podproftext.set("Post Failed")
 				self.podproflabel.configure(fg="red")
-			gui.write_output(gui.header(35, "Pod Assignment Push Complete", 2))
+			gui.write_output(gui.header(35, "Push Complete", 2))
 	def submit_rr_node(self):
 		if "select" not in self.bgprrmenu.get().lower():
 			if gui.login_check():
@@ -972,7 +972,7 @@ class basicwindow:
 				else:
 					self.bgprrstatustext.set("Post Failed")
 					self.bgprrstatuslabel.configure(fg="red")
-				gui.write_output(gui.header(35, "DNS Server Push Complete", 2))
+				gui.write_output(gui.header(35, "Push Complete", 2))
 		else:
 			self.bgprrstatustext.set("Bad Selection")
 			self.bgprrstatuslabel.configure(fg="red")
@@ -981,7 +981,7 @@ class basicwindow:
 			entryobj.config(state='disabled')
 		elif checkboxobj.get() == 1:
 			entryobj.config(state='normal')
-	def compile_if_profiles(self):
+	def compile_if_policies(self):
 		checkobjlist = [self.ifprofcdpenvar, self.ifprofcdpdisvar, 
 		self.ifproflldpenvar, self.ifproflldpdisvar, self.ifprof1gvar, 
 		self.ifprof10gvar, self.ifproflacpvar, self.ifprofstatvar, self.ifprofmacvar]
@@ -1020,20 +1020,20 @@ class basicwindow:
 			return postlist
 		else:
 			return status
-	def submit_if_profiles(self):
-		plist = self.compile_if_profiles()
+	def submit_if_policies(self):
+		plist = self.compile_if_policies()
 		for entry in self.ifprofreportobjlist:
 			entry.configure(fg="black")
 		if plist == "empty":
-			self.ifprofchecktext.set("Profile Names Cannot be Empty")
+			self.ifprofchecktext.set("Policy Names Cannot be Empty")
 			self.ifprofchecklabel.configure(fg="red")
 		elif plist == "badinput":
-			self.ifprofchecktext.set("Illegal Profile Name. Allowed Characters are a-z A-Z 0-9 - _ :")
+			self.ifprofchecktext.set("Illegal Policy Name. Allowed Characters are a-z A-Z 0-9 - _ :")
 			self.ifprofchecklabel.configure(fg="red")
 		elif plist != []:
 			if gui.login_check():
 				self.ifprofchecktext.set("Attempting Post...")
-				gui.write_output("\n\n\n"+gui.header(35, "Pushing Interface Profiles", 2))
+				gui.write_output("\n\n\n"+gui.header(35, "Pushing Interface Policies", 2))
 				resultlist = []
 				for push in plist:
 					gui.write_output("\n"+gui.header(35, push[0][2], 1))
@@ -1056,7 +1056,7 @@ class basicwindow:
 					self.ifprofchecktext.set("Issues Encountered, See Logs")
 					self.ifprofchecklabel.configure(fg="red")
 		else:
-			self.ifprofchecktext.set("Must Select at Least One Profile")
+			self.ifprofchecktext.set("Must Select at Least One Policy")
 			self.ifprofchecklabel.configure(fg="red")
 	def aaep_frame_control(self):
 		calling = inspect.stack()[1][4][0].replace("\t", "")
@@ -1214,9 +1214,491 @@ class basicwindow:
 		self.basicwindow.destroy()
 
 
-			
-			
-			
+
+class systeminfo:
+	def __init__(self, master):
+		self.basicwindow = tk.Toplevel(master)
+		self.basicwindow.title("Acid ACI System Info")
+		self.basicwindow.geometry('750x200')
+		self.basicwindow.tk.call('wm','iconphoto',self.basicwindow._w,gui.logo)
+		self.bwcanvas = tk.Canvas(self.basicwindow)
+		self.bwcanvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=tk.YES)
+		self.bw = tk.Frame(self.bwcanvas)
+		self.bw.pack(side=tk.LEFT, fill=tk.BOTH, expand=tk.YES)
+		self.bwscroll = tk.Scrollbar(self.basicwindow)
+		self.bwscroll.pack(side=tk.RIGHT, fill='y')
+		self.bwcanvas.configure(yscrollcommand = self.bwscroll.set)
+		self.bwscroll.config(command=self.bwcanvas.yview)
+		self.interior_id = self.bwcanvas.create_window(0, 0, window=self.bw, anchor=tk.N+tk.W)
+		self.bwcanvas.bind('<Configure>', self.on_configure)
+		self.bwcanvas.bind_all("<MouseWheel>", self.on_mousewheel)
+		self.bwcanvas.configure(scrollregion=self.bwcanvas.bbox("all"))
+		self.basicwindow.wm_protocol("WM_DELETE_WINDOW", self.close)
+		######## UPDATE ########
+		self.updateframe = tk.Frame(self.bw)
+		self.updateframe.pack(fill=tk.BOTH, expand=tk.YES)
+		self.updateframe.grid_columnconfigure(0, weight=1)
+		self.updatebutton = tk.Button(self.updateframe, text='Update', command=self.update)
+		self.updatebutton.grid(row=0, column=0)
+		########################
+		######## CONTROLLERS ########
+		self.controllersframe = tk.Frame(self.bw, borderwidth=1, relief=tk.SUNKEN)
+		self.controllersframe.pack(fill=tk.BOTH, expand=tk.YES)
+		self.controllersframe.grid_columnconfigure(0, weight=1)
+		self.controllersheadframe = tk.Frame(self.controllersframe)
+		self.controllersheadframe.grid(row=0, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.controllersheadframe.grid_columnconfigure(0, weight=1)
+		self.controllershead = tk.Label(self.controllersheadframe, text="ACI Controllers", font=("Helvetica", 12, "bold"))
+		self.controllershead.grid(row=0, column=0)
+		self.controllersdataframe = tk.Frame(self.controllersframe)
+		self.controllersdataframe.grid(row=1, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.controllersdataframe.grid_columnconfigure(0, weight=1)
+		self.controllersmappings = {
+			0: {"attributename": "name","headname": "Name"},
+			1: {"attributename": "id","headname": "Node ID"},
+			2: {"attributename": "model","headname": "Model #"},
+			3: {"attributename": "serial","headname": "Serial #"},
+			4: {"attributename": "oobMgmtAddr","headname": "OOB IP Address"},
+			5: {"attributename": "version","headname": "Software Version"},
+			}
+		self.create_headers(self.controllersdataframe, self.controllersmappings)
+		#############################
+		######## SPINES ########
+		self.spinesframe = tk.Frame(self.bw, borderwidth=1, relief=tk.SUNKEN)
+		self.spinesframe.pack(fill=tk.BOTH, expand=tk.YES)
+		self.spinesframe.grid_columnconfigure(0, weight=1)
+		self.spinesheadframe = tk.Frame(self.spinesframe)
+		self.spinesheadframe.grid(row=0, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.spinesheadframe.grid_columnconfigure(0, weight=1)
+		self.spineshead = tk.Label(self.spinesheadframe, text="ACI Spine Switches", font=("Helvetica", 12, "bold"))
+		self.spineshead.grid(row=0, column=0)
+		self.spinesdataframe = tk.Frame(self.spinesframe)
+		self.spinesdataframe.grid(row=1, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.spinesdataframe.grid_columnconfigure(0, weight=1)
+		self.spinesmappings = {
+			0: {"attributename": "name","headname": "Name"},
+			1: {"attributename": "id","headname": "Node ID"},
+			2: {"attributename": "model","headname": "Model #"},
+			3: {"attributename": "serial","headname": "Serial #"},
+			4: {"attributename": "oobMgmtAddr","headname": "OOB IP Address"},
+			5: {"attributename": "version","headname": "Software Version"},
+			}
+		self.create_headers(self.spinesdataframe, self.spinesmappings)
+		########################
+		######## LEAVES ########
+		self.leavesframe = tk.Frame(self.bw, borderwidth=1, relief=tk.SUNKEN)
+		self.leavesframe.pack(fill=tk.BOTH, expand=tk.YES)
+		self.leavesframe.grid_columnconfigure(0, weight=1)
+		self.leavesheadframe = tk.Frame(self.leavesframe)
+		self.leavesheadframe.grid(row=0, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.leavesheadframe.grid_columnconfigure(0, weight=1)
+		self.leaveshead = tk.Label(self.leavesheadframe, text="ACI Leaf Switches", font=("Helvetica", 12, "bold"))
+		self.leaveshead.grid(row=0, column=0)
+		self.leavesdataframe = tk.Frame(self.leavesframe)
+		self.leavesdataframe.grid(row=1, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.leavesdataframe.grid_columnconfigure(0, weight=1)
+		self.leavesmappings = {
+			0: {"attributename": "name","headname": "Name"},
+			1: {"attributename": "id","headname": "Node ID"},
+			2: {"attributename": "model","headname": "Model #"},
+			3: {"attributename": "serial","headname": "Serial #"},
+			4: {"attributename": "oobMgmtAddr","headname": "OOB IP Address"},
+			5: {"attributename": "version","headname": "Software Version"},
+			}
+		self.create_headers(self.leavesdataframe, self.leavesmappings)
+		########################
+		######## CLOSE ########
+		self.closeframe = tk.Frame(self.bw)
+		self.closeframe.pack(fill=tk.BOTH, expand=tk.YES)
+		self.closeframe.grid_columnconfigure(0, weight=1)
+		self.closebutton = tk.Button(self.closeframe, text='Close', command=self.close)
+		self.closebutton.grid(row=0, column=0)
+		#######################
+	def on_configure(self, event):
+		self.bwcanvas.itemconfig(self.interior_id, width=event.width)
+		self.bwcanvas.configure(scrollregion=self.bwcanvas.bbox('all'))
+	def on_mousewheel(self, event):
+		self.bwcanvas.yview_scroll(int(-1*(event.delta/120)), "units")
+	def create_headers(self, frame, mappings):
+		for header in mappings:
+			text = mappings[header]["headname"]
+			columnid = header
+			newhead = tk.Label(frame, text=text, font=("Helvetica", 8, "bold"))
+			newhead.grid(row=0, column=columnid)
+			frame.grid_columnconfigure(columnid, weight=1)
+	def update(self):
+		start_time = time.time()
+		if gui.login_check():
+			data = pull_aci_info()
+			columnorder = ["name", "id", "model", "serial", "oobMgmtAddr", "version"]
+			gui.write_output("\n\n\n"+gui.header(35, "System Info", 2))
+			gui.write_output("\n"+make_table(columnorder, data))
+			timetaken = time.time() - start_time
+			##############
+			datamappings = {
+				"controller": {"frame": self.controllersdataframe,"fieldmappings": self.controllersmappings, "index": 1},
+				"spine": {"frame": self.spinesdataframe,"fieldmappings": self.spinesmappings, "index": 1},
+				"leaf": {"frame": self.leavesdataframe,"fieldmappings": self.leavesmappings, "index": 1}
+				}
+			##############
+			for node in data:
+				frame = datamappings[node["role"]]["frame"]
+				fieldmappings = datamappings[node["role"]]["fieldmappings"]
+				for field in fieldmappings:
+					path = fieldmappings[field]["attributename"]
+					text = node[path]
+					columnid = field
+					rowid = datamappings[node["role"]]["index"]
+					#newnodelabel = tk.Label(frame, text=text)
+					#newnodelabel.grid(row=rowid, column=columnid)
+					newhead = tk.Text(frame, height=1, borderwidth=0)
+					newhead.insert(1.0, text)
+					newhead.grid(row=rowid, column=columnid)
+					newhead.configure(state="disabled")
+					newhead.tag_configure("center", justify='center')
+					newhead.tag_add("center", 1.0, "end")
+				datamappings[node["role"]]["index"] += 1
+			self.update_height()
+	def update_height(self):
+		self.bwcanvas.update()
+		self.bwcanvas.configure(scrollregion=self.bwcanvas.bbox("all"))
+		if self.bwcanvas.bbox("all")[3] < root.winfo_screenheight():
+			width = str(self.basicwindow.winfo_width())
+			height = str(self.bwcanvas.bbox("all")[3] + 10)
+			self.basicwindow.geometry(width+'x'+height)
+	def close(self):
+		gui.sysinfoopen = False
+		self.basicwindow.destroy()
+
+
+class ports:
+	def __init__(self, master):
+		self.basicwindow = tk.Toplevel(master)
+		self.basicwindow.title("Acid Configure Ports")
+		self.basicwindow.geometry('750x200')
+		self.basicwindow.tk.call('wm','iconphoto',self.basicwindow._w,gui.logo)
+		self.bwcanvas = tk.Canvas(self.basicwindow)
+		self.bwcanvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=tk.YES)
+		self.bw = tk.Frame(self.bwcanvas)
+		self.bw.pack(side=tk.LEFT, fill=tk.BOTH, expand=tk.YES)
+		self.bwscroll = tk.Scrollbar(self.basicwindow)
+		self.bwscroll.pack(side=tk.RIGHT, fill='y')
+		self.bwcanvas.configure(yscrollcommand = self.bwscroll.set)
+		self.bwscroll.config(command=self.bwcanvas.yview)
+		self.interior_id = self.bwcanvas.create_window(0, 0, window=self.bw, anchor=tk.N+tk.W)
+		self.bwcanvas.bind('<Configure>', lambda event, a=self.bwcanvas, b=self.interior_id:self.on_configure(event, a, b))
+		#self.bwcanvas.bind('<Configure>', self.on_configure)
+		self.bwcanvas.bind_all("<MouseWheel>", self.on_mousewheel)
+		self.bwcanvas.configure(scrollregion=self.bwcanvas.bbox("all"))
+		self.basicwindow.wm_protocol("WM_DELETE_WINDOW", self.close)
+		self.publishedswitches = []
+		######## LEAF PROFILES ########
+		self.leafprofframe = tk.Frame(self.bw, borderwidth=4, relief=tk.RAISED)
+		self.leafprofframe.pack(fill=tk.BOTH, expand=tk.YES)
+		self.leafprofframe.grid_columnconfigure(0, weight=1)
+		self.leafprofframe.grid_columnconfigure(1, weight=2)
+		self.leafprofheadframe = tk.Frame(self.leafprofframe)
+		self.leafprofheadframe.grid(row=0, column=0, columnspan=2, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.leafprofheadframe.grid_columnconfigure(0, weight=1)
+		self.leafprofhead = tk.Label(self.leafprofheadframe, text="Create Leaf Profiles (Switch Selectors)", font=("Helvetica", 12, "bold"))
+		self.leafprofhead.grid(row=0, column=0)
+		####
+		self.leafprofnameframe = tk.Frame(self.leafprofframe, borderwidth=1, relief=tk.SUNKEN)
+		self.leafprofnameframe.grid(row=1, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.leafprofnameframe.grid_columnconfigure(0, weight=1)
+		self.leafprofnamelabel = tk.Label(self.leafprofnameframe, text="Leaf Profile Name")
+		self.leafprofnamelabel.grid(row=0, column=0)
+		self.leafprofnameentry = tk.Entry(self.leafprofnameframe, bd=5, width=35)
+		self.leafprofnameentry.grid(row=1, column=0)
+		self.leafprofnameentry.config(state='disabled')
+		self.leafprofnameautovar = tk.IntVar(value=1)
+		self.leafprofnameauto = tk.Checkbutton(self.leafprofnameframe, text="Auto Name", variable=self.leafprofnameautovar, 
+		command=self.tick_leafprofnameauto)
+		self.leafprofnameauto.grid(row=2, column=0)
+		self.leafprofsubmit = tk.Button(self.leafprofnameframe, text='Submit Leaf Profile', command=self.submit_leaf_profile)
+		self.leafprofsubmit.grid(row=3, column=0)
+		self.leafprofsubmitchecktext = tk.StringVar()
+		self.leafprofsubmitchecktext.set("")
+		self.leafprofsubmitchecklabel = tk.Label(self.leafprofnameframe, textvariable=self.leafprofsubmitchecktext)
+		self.leafprofsubmitchecklabel.grid(row=4, column=0)
+		#####################
+		self.leafprofswframe = tk.Frame(self.leafprofframe, borderwidth=1, relief=tk.SUNKEN, padx=10)
+		self.leafprofswframe.grid(row=1, column=1, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.leafprofswframe.grid_columnconfigure(0, weight=1)
+		self.leafprofswupdatebutton = tk.Button(self.leafprofswframe, text='Update Switch List', command=self.update_leaf_list)
+		self.leafprofswupdatebutton.grid(row=0, column=0)
+		####
+		self.leafprofswitchtopframe = tk.Frame(self.leafprofswframe, borderwidth=1, relief=tk.SUNKEN)
+		self.leafprofswitchtopframe.grid(row=1, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.leafprofswitchcanvas = tk.Canvas(self.leafprofswitchtopframe, width=100, height=100)
+		self.leafprofswitchcanvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=tk.YES)
+		self.leafprofswleavesframe = tk.Frame(self.leafprofswitchcanvas)
+		self.leafprofswleavesframe.pack(side=tk.LEFT, fill=tk.BOTH, expand=tk.YES)
+		self.leafprofswleavesframe.grid_columnconfigure(0, weight=1)
+		self.leafprofswitchscroll = tk.Scrollbar(self.leafprofswitchtopframe)
+		self.leafprofswitchscroll.pack(side=tk.RIGHT, fill='y')
+		self.leafprofswitchcanvas.configure(yscrollcommand = self.leafprofswitchscroll.set)
+		self.leafprofswitchscroll.config(command=self.leafprofswitchcanvas.yview)
+		self.interior_id = self.leafprofswitchcanvas.create_window(0, 0, window=self.leafprofswleavesframe, anchor=tk.N+tk.W)
+		self.leafprofswitchcanvas.bind('<Configure>', lambda event, a=self.leafprofswitchcanvas, b=self.interior_id:self.on_configure(event, a, b))
+		self.leafprofswitchcanvas.bind_all("<MouseWheel>", self.on_mousewheel)
+		self.leafprofswitchcanvas.configure(scrollregion=self.leafprofswitchcanvas.bbox("all"))
+		######## VPC ########
+		self.vpcframe = tk.Frame(self.bw, borderwidth=4, relief=tk.RAISED)
+		self.vpcframe.pack(fill=tk.BOTH, expand=tk.YES)
+		self.vpcframe.grid_columnconfigure(0, weight=1)
+		self.vpcframe.grid_columnconfigure(1, weight=1)
+		self.vpcheadframe = tk.Frame(self.vpcframe)
+		self.vpcheadframe.grid(row=0, column=0, columnspan=2, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.vpcheadframe.grid_columnconfigure(0, weight=1)
+		self.vpchead = tk.Label(self.vpcheadframe, text="Create Virtual Port-Channel (vPC)", font=("Helvetica", 12, "bold"))
+		self.vpchead.grid(row=0, column=0)
+		#########
+		self.vpclistsupdatebutton = tk.Button(self.vpcframe, text='Update Lists', command=self.submit_leaf_profile)
+		self.vpclistsupdatebutton.grid(row=1, column=0, columnspan=2)
+		#########
+		self.vpcpolgrpframe = tk.Frame(self.vpcframe, borderwidth=1, relief=tk.SUNKEN)
+		self.vpcpolgrpframe.grid(row=2, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.vpcpolgrpframe.grid_columnconfigure(1, weight=1)
+		self.vpcpolgrpfrmheader = tk.Label(self.vpcpolgrpframe, text="Policy Group Settings", font=("Helvetica", 8, "bold"))
+		self.vpcpolgrpfrmheader.grid(row=0, column=0, columnspan=2)
+		####
+		self.vpcpolgrpheader = tk.Label(self.vpcpolgrpframe, text="Policy Group Name")
+		self.vpcpolgrpheader.grid(row=1, column=0, columnspan=2)
+		self.vpcpolgrpentry = tk.Entry(self.vpcpolgrpframe, bd=5, width=45)
+		self.vpcpolgrpentry.grid(row=2, column=0, columnspan=2)
+		self.vpcpolgrpentry.config(state='disabled')
+		self.vpcpolgrpautovar = tk.IntVar(value=1)
+		self.vpcpolgrpauto = tk.Checkbutton(self.vpcpolgrpframe, text="Auto Name", variable=self.vpcpolgrpautovar, 
+		command=self.tick_vpcpolgrpnameauto)
+		self.vpcpolgrpauto.grid(row=3, column=0, columnspan=2)
+		####
+		self.vpcaaeplabel = tk.Label(self.vpcpolgrpframe, text="Attachable Entity Profile", pady=10)
+		self.vpcaaeplabel.grid(row=4, column=0, sticky=tk.E)
+		self.vpcaaepvar = tk.StringVar(self.vpcpolgrpframe)
+		self.vpcaaepvar.set("Select an AAEP")
+		self.vpcaaep = ttk.Combobox(self.vpcpolgrpframe, textvariable=self.vpcaaepvar, width=30)
+		self.vpcaaep.state(['readonly'])
+		self.vpcaaep.grid(row=4, column=1)
+		####
+		self.vpclaglabel = tk.Label(self.vpcpolgrpframe, text="Port-Channel Policy", pady=10)
+		self.vpclaglabel.grid(row=5, column=0, sticky=tk.E)
+		self.vpclagvar = tk.StringVar(self.vpcpolgrpframe)
+		self.vpclagvar.set("Select a Port-Channel Policy")
+		self.vpclag = ttk.Combobox(self.vpcpolgrpframe, textvariable=self.vpclagvar, width=30)
+		self.vpclag.state(['readonly'])
+		self.vpclag.grid(row=5, column=1)
+		####
+		self.vpccdpcheckbuttonvar = tk.IntVar(value=1)
+		self.vpccdpcheckbutton = tk.Checkbutton(self.vpcpolgrpframe, text="CDP Policy", variable=self.vpccdpcheckbuttonvar, 
+		command=lambda: self.disable_combobox(self.vpccdp, self.vpccdpcheckbuttonvar), pady=8)
+		self.vpccdpcheckbutton.grid(row=6, column=0, sticky=tk.E)
+		self.vpccdpvar = tk.StringVar(self.vpcpolgrpframe)
+		self.vpccdpvar.set("Select a CDP Policy")
+		self.vpccdp = ttk.Combobox(self.vpcpolgrpframe, textvariable=self.vpccdpvar, width=30)
+		self.vpccdp.state(['readonly'])
+		self.vpccdp.grid(row=6, column=1)
+		####
+		self.vpclldpcheckbuttonvar = tk.IntVar(value=1)
+		self.vpclldpcheckbutton = tk.Checkbutton(self.vpcpolgrpframe, text="LLDP Policy", variable=self.vpclldpcheckbuttonvar, 
+		command=lambda: self.disable_combobox(self.vpclldp, self.vpclldpcheckbuttonvar), pady=8)
+		self.vpclldpcheckbutton.grid(row=7, column=0, sticky=tk.E)
+		self.vpclldpvar = tk.StringVar(self.vpcpolgrpframe)
+		self.vpclldpvar.set("Select a LLDP Policy")
+		self.vpclldp = ttk.Combobox(self.vpcpolgrpframe, textvariable=self.vpclldpvar, width=30)
+		self.vpclldp.state(['readonly'])
+		self.vpclldp.grid(row=7, column=1)
+		####
+		self.vpclinkcheckbuttonvar = tk.IntVar(value=1)
+		self.vpclinkcheckbutton = tk.Checkbutton(self.vpcpolgrpframe, text="Link Policy", variable=self.vpclinkcheckbuttonvar, 
+		command=lambda: self.disable_combobox(self.vpclink, self.vpclinkcheckbuttonvar), pady=8)
+		self.vpclinkcheckbutton.grid(row=8, column=0, sticky=tk.E)
+		self.vpclinkvar = tk.StringVar(self.vpcpolgrpframe)
+		self.vpclinkvar.set("Select a Link Policy")
+		self.vpclink = ttk.Combobox(self.vpcpolgrpframe, textvariable=self.vpclinkvar, width=30)
+		self.vpclink.state(['readonly'])
+		self.vpclink.grid(row=8, column=1)
+		##################################
+		self.vpcintprofframe = tk.Frame(self.vpcframe, borderwidth=1, relief=tk.SUNKEN)
+		self.vpcintprofframe.grid(row=2, column=1, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.vpcintprofframe.grid_columnconfigure(0, weight=1)
+		self.vpcintprofframe.grid_columnconfigure(1, weight=1)
+		self.vpcintproffrmheader = tk.Label(self.vpcintprofframe, text="Interface Profile Settings", font=("Helvetica", 8, "bold"))
+		self.vpcintproffrmheader.grid(row=0, column=0, columnspan=3)
+		####
+		self.vpcintprofheader = tk.Label(self.vpcintprofframe, text="Interface Profile Name")
+		self.vpcintprofheader.grid(row=1, column=0, columnspan=3)
+		self.vpcintprofentry = tk.Entry(self.vpcintprofframe, bd=5, width=45)
+		self.vpcintprofentry.grid(row=2, column=0, columnspan=3)
+		####
+		self.vpcleafproflabel = tk.Label(self.vpcintprofframe, text="Switch Selector Profile", pady=15)
+		self.vpcleafproflabel.grid(row=3, column=0, sticky=tk.E)
+		self.vpcleafprofvar = tk.StringVar(self.vpcintprofframe)
+		self.vpcleafprofvar.set("Select a Port-Channel Policy")
+		self.vpcleafprof = ttk.Combobox(self.vpcintprofframe, textvariable=self.vpcleafprofvar, width=30)
+		self.vpcleafprof.state(['readonly'])
+		self.vpcleafprof.grid(row=3, column=1)
+		####
+		self.vpcselframe = tk.Frame(self.vpcintprofframe, borderwidth=1, relief=tk.SUNKEN, padx=10)
+		self.vpcselframe.grid(row=4, column=0, columnspan=2)
+		self.vpcselframe.grid_columnconfigure(0, weight=1)
+		####
+		self.vpcportsellabel = tk.Label(self.vpcselframe, text="Port Selector Name")
+		self.vpcportsellabel.grid(row=0, column=0)
+		self.vpcportselentry = tk.Entry(self.vpcselframe, bd=5, width=35)
+		self.vpcportselentry.grid(row=1, column=0)
+		self.vpcportselentry.config(state='disabled')
+		self.vpcportselautovar = tk.IntVar(value=1)
+		self.vpcportselauto = tk.Checkbutton(self.vpcselframe, text="Auto Name", variable=self.vpcportselautovar, 
+		command=self.tick_vpcportselnameauto)
+		self.vpcportselauto.grid(row=1, column=1)
+		self.vpcupdateintbutton = tk.Button(self.vpcselframe, text='Update Interface List', command=self.close)
+		self.vpcupdateintbutton.grid(row=2, column=0, columnspan=2)
+		####
+		self.vpcinttopframe = tk.Frame(self.vpcselframe, borderwidth=1, relief=tk.SUNKEN)
+		self.vpcinttopframe.grid(row=3, column=0, sticky=tk.N+tk.S+tk.W+tk.E, columnspan=2)
+		self.vpcintcanvas = tk.Canvas(self.vpcinttopframe, width=100, height=100)
+		self.vpcintcanvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=tk.YES)
+		self.vpcintframe = tk.Frame(self.vpcintcanvas)
+		self.vpcintframe.pack(side=tk.LEFT, fill=tk.BOTH, expand=tk.YES)
+		self.vpcintframe.grid_columnconfigure(0, weight=1)
+		self.vpcintscroll = tk.Scrollbar(self.vpcinttopframe)
+		self.vpcintscroll.pack(side=tk.RIGHT, fill='y')
+		self.vpcintcanvas.configure(yscrollcommand = self.vpcintscroll.set)
+		self.vpcintscroll.config(command=self.vpcintcanvas.yview)
+		self.interior_id = self.vpcintcanvas.create_window(0, 0, window=self.vpcintframe, anchor=tk.N+tk.W)
+		self.vpcintcanvas.bind('<Configure>', lambda event, a=self.vpcintcanvas, b=self.interior_id:self.on_configure(event, a, b))
+		self.vpcintcanvas.bind_all("<MouseWheel>", self.on_mousewheel)
+		self.vpcintcanvas.configure(scrollregion=self.vpcintcanvas.bbox("all"))
+		####
+		self.vpcsubmitframe = tk.Frame(self.vpcframe, borderwidth=1, relief=tk.SUNKEN)
+		self.vpcsubmitframe.grid(row=3, column=0, sticky=tk.N+tk.S+tk.W+tk.E, columnspan=2)
+		self.vpcsubmitframe.grid_columnconfigure(0, weight=1)
+		self.vpcsubmitbutton = tk.Button(self.vpcsubmitframe, text='Submit vPC Configuration', command=self.submit_leaf_profile)
+		self.vpcsubmitbutton.grid(row=0, column=0)
+		self.vpcsubmitchecktext = tk.StringVar()
+		self.vpcsubmitchecktext.set("Check Text")
+		self.vpcsubmitchecklabel = tk.Label(self.vpcsubmitframe, textvariable=self.vpcsubmitchecktext)
+		self.vpcsubmitchecklabel.grid(row=1, column=0)
+		######## CLOSE ########
+		self.closeframe = tk.Frame(self.bw)
+		self.closeframe.pack(fill=tk.BOTH, expand=tk.YES)
+		self.closeframe.grid_columnconfigure(0, weight=1)
+		self.closebutton = tk.Button(self.closeframe, text='Close', command=self.close)
+		self.closebutton.grid(row=0, column=0)
+		self.update_height()
+		#######################
+	def on_configure(self, event, canvasobject, window):
+		canvasobject.itemconfig(window, width=event.width)
+		canvasobject.configure(scrollregion=canvasobject.bbox('all'))
+	def on_mousewheel(self, event):
+		self.bwcanvas.yview_scroll(int(-1*(event.delta/120)), "units")
+	def update_height(self):
+		self.bwcanvas.update()
+		self.bwcanvas.configure(scrollregion=self.bwcanvas.bbox("all"))
+		if self.bwcanvas.bbox("all")[3] < root.winfo_screenheight():
+			width = str(self.basicwindow.winfo_width())
+			height = str(self.bwcanvas.bbox("all")[3] + 10)
+			self.basicwindow.geometry(width+'x'+height)
+	def update_lag_policies(self):
+		if gui.login_check():
+			data = get_lag_policies()
+			print(data)
+	def test(self):
+		if gui.login_check():
+			data = get_infra_policies()
+			print(data)
+	#def disable_entry(self, entryobj, checkboxobj):
+	#	if checkboxobj.get() == 0:
+	#		entryobj.config(state='disabled')
+	#	elif checkboxobj.get() == 1:
+	#		entryobj.config(state='normal')
+	def disable_entry_inverted(self, entryobj, checkboxobj):
+		if checkboxobj.get() == 1:
+			entryobj.config(state='disabled')
+		elif checkboxobj.get() == 0:
+			entryobj.config(state='normal')
+	def disable_combobox(self, entryobj, checkboxobj):
+		if checkboxobj.get() == 0:
+			entryobj.config(state='disabled')
+		elif checkboxobj.get() == 1:
+			entryobj.config(state='readonly')
+	def tick_leafprofnameauto(self):
+		self.disable_entry_inverted(self.leafprofnameentry, self.leafprofnameautovar)
+		self.update_leaf_profile_name()
+	def tick_vpcpolgrpnameauto(self):
+		self.disable_entry_inverted(self.vpcpolgrpentry, self.vpcpolgrpautovar)
+	def tick_vpcportselnameauto(self):
+		self.disable_entry_inverted(self.vpcportselentry, self.vpcportselautovar)
+	def update_leaf_list(self):
+		if gui.login_check():
+			data = get_leaves()
+			rowindex = 0
+			self.publishedswitches = []
+			for leaf in data:
+				text = leaf["name"]+" ("+leaf["id"]+")"
+				switchobjvar = tk.IntVar(value=0)
+				switchobj = tk.Checkbutton(self.leafprofswleavesframe, text=text, variable=switchobjvar,
+				command= lambda: self.update_leaf_profile_name())
+				switchobj.grid(row=rowindex, column=0)
+				self.publishedswitches.append({"id": leaf["id"], "intvar": switchobjvar, "checkbutton": switchobj})
+				rowindex += 1
+			self.leafprofswitchcanvas.update()
+			self.leafprofswitchcanvas.configure(scrollregion=self.leafprofswitchcanvas.bbox("all"))
+	def get_leaf_profile_autoname(self):
+		self.tickedswitches = []
+		for switch in self.publishedswitches:
+			if switch['intvar'].get() == 1:
+				self.tickedswitches.append(switch['id'])
+		if len(self.tickedswitches) == 0:
+			return ""
+		else:
+			return named_range(self.tickedswitches, prepend="L")[0]
+	def update_leaf_profile_name(self):
+		self.get_leaf_profile_autoname()
+		if self.leafprofnameautovar.get() == 1:
+			self.leafprofnameentry.config(state='normal')
+			self.leafprofnameentry.delete(0, 'end')
+			text = self.get_leaf_profile_autoname()
+			self.leafprofnameentry.insert(tk.END, text)
+			self.leafprofnameentry.config(state='disabled')
+	def submit_leaf_profile(self):
+		self.leafprofsubmitchecklabel.configure(fg="black")
+		self.leafprofsubmitchecktext.set("")
+		if not check_aciobjname_entry(self.leafprofnameentry):
+			self.leafprofsubmitchecklabel.configure(fg="red")
+			self.leafprofsubmitchecktext.set("Bad Profile Name")
+		else:
+			if self.get_leaf_profile_autoname() == "":
+				self.leafprofsubmitchecklabel.configure(fg="red")
+				self.leafprofsubmitchecktext.set("Need to Select At Least One Switch")
+			else:
+				if gui.login_check():
+					self.leafprofsubmitchecktext.set("Attempting Post...")
+					ranges = named_range(self.tickedswitches, prepend="")[1]
+					self.pushdatatup = create_leaf_profile(self.leafprofnameentry.get(), self.leafprofnameentry.get(), ranges)
+					self.pushurl = gui.call.baseurl+self.pushdatatup[0]
+					self.pushdata = self.pushdatatup[1]
+					gui.write_output("\n\n\n"+gui.header(35, "Pushing Leaf Profile", 2))
+					gui.write_send_header_body(self.pushurl, self.pushdata)
+					self.response = gui.post(url=self.pushurl, data=self.pushdata)
+					gui.write_response_header_body(self.response)
+					if self.response.getcode() == 200:
+						self.leafprofsubmitchecktext.set("Success: HTTP 200")
+						self.leafprofsubmitchecklabel.configure(fg="green4")
+					else:
+						self.leafprofsubmitchecktext.set("Post Failed")
+						self.leafprofsubmitchecklabel.configure(fg="red")
+					gui.write_output(gui.header(35, "Leaf Profile Push Complete", 2))		
+	def close(self):
+		gui.portsopen = False
+		self.basicwindow.destroy()
+
+
+
+
+
+
 #####################################
 def check_ipdns_entry(entryobj, labelobj, textobj):
 	textobj.set("")
@@ -1308,8 +1790,11 @@ def check_bgpasn_entry(entryobj, labelobj, textobj):
 			return False
 
 def check_aciobjname_entry(entryobj):
+	entrystate = entryobj.cget("state")
+	entryobj.configure(state="normal")
 	entryobj.configure(bg="white")
 	if entry_is_empty(entryobj):
+		entryobj.configure(state=entrystate)
 		return False
 	else:
 		characterregex = "^[a-zA-Z0-9\-\.\_\:]+$"
@@ -1319,6 +1804,7 @@ def check_aciobjname_entry(entryobj):
 				result = True
 		if result == False:
 			entryobj.configure(bg="red")
+		entryobj.configure(state=entrystate)
 		return result
 
 def entry_is_empty(entryobj):
@@ -1407,11 +1893,12 @@ def get_calls(pushurl, message):
 	return json.loads(rawdata)
 
 def pull_aci_info():
-	result = []
+	preresult = []
 	poddict = get_pod_list()
 	for pod in poddict:
 		podid = poddict[pod]['id']
 		nodes = get_all_nodes(podid=podid)
+		nodeorder = []
 		for node in nodes:
 			nodedata = node
 			nodedata.update(get_node_info(podid, node['id']))
@@ -1419,11 +1906,76 @@ def pull_aci_info():
 				nodedata.update(get_controller_fw(podid, node['id']))
 			else:
 				nodedata.update(get_switch_fw(podid, node['id']))
-			result.append(node)
-		columnorder = ["name", "id", "model", "serial", "oobMgmtAddr"]
-		gui.write_output("\n\n\n"+gui.header(35, "System Info", 2))
-		gui.write_output("\n\n\n"+make_table(columnorder, result))
-			
+			nodeorder.append(int(node['id']))
+			preresult.append(node)
+		#### Order Nodes ####
+		result = []
+		nodeorder.sort()
+		for nodeid in nodeorder:
+			for node in preresult:
+				if node['id'] == str(nodeid):result.append(node); break
+		#####################
+	return result
+
+####################################### Messing with threading #########################################
+################ Comment out pull_aci_info() and uncomment this to continue testing ####################
+####import queue
+####import threading
+####
+####def pull_aci_info():
+####	result = []
+####	start_time = time.time()
+####	poddict = get_pod_list()
+####	for pod in poddict:
+####		podid = poddict[pod]['id']
+####		nodes = get_all_nodes(podid=podid)
+####		########
+####		queuedata = queue.Queue()
+####		#######
+####		print(len(nodes))
+####		for node in nodes:
+####			thread = threading.Thread(target=dontthreadonme, args=(queuedata, get_node_info, podid, node['id']))
+####			thread.start()
+####		wthread = threading.Thread(target=watcher, args=(queuedata, start_time))
+####		wthread.start()
+####		#while threading.activeCount():
+####		#	time.sleep(0.5)
+####		#	print(threading.activeCount())
+####		#	print(queuedata.qsize())
+####			#if exc_info:
+####			#	raise exc_info[1]
+####		#for node in range(queuedata.qsize()):
+####		#	print(queuedata.get())
+####		#	
+####		#	
+####		#	
+####		#	nodedata = node
+####		#	nodedata.update(get_node_info(podid, node['id']))
+####		#	if nodedata['role'] == 'controller':
+####		#		nodedata.update(get_controller_fw(podid, node['id']))
+####		#	else:
+####		#		nodedata.update(get_switch_fw(podid, node['id']))
+####		#	result.append(node)
+####		########
+####		#columnorder = ["name", "id", "model", "serial", "oobMgmtAddr"]
+####		#gui.write_output("\n\n\n"+gui.header(35, "System Info", 2))
+####		#gui.write_output("\n\n\n"+make_table(columnorder, result))
+####		#gui.write_output(time.time() - start_time)
+####
+####def dontthreadonme(queuedata, method, *args):
+####	result = method(*args)
+####	queuedata.put(result)
+####
+####def watcher(queuedata, start_time):
+####	while threading.activeCount() > 2:
+####		time.sleep(0.5)
+####		print(threading.activeCount())
+####		print(queuedata.qsize())
+####	print("\n\n\n\n\n\n done!")
+####	for node in range(queuedata.qsize()):
+####		print(queuedata.get())
+####	gui.write_output(time.time() - start_time)
+#########################################################################################################
 
 def get_pod_list():
 	pushurl = gui.call.baseurl+"/api/node/class/fabricPod.json"
@@ -1461,7 +2013,7 @@ def get_pod_info(podid="1"):
 		nodes.update({atts['id']: atts})
 		index += 1
 	return nodes
-	
+
 def get_node_info(podid, nodeid):
 	pushurl = gui.call.baseurl+"/api/node/mo/topology/pod-"+podid+"/node-"+nodeid+".json?query-target=children&target-subtree-class=topSystem"
 	message = "Getting More Info on Node "+nodeid
@@ -1488,7 +2040,42 @@ def get_controller_fw(podid, nodeid):
 		result.update({att: data["imdata"][0]["firmwareCtrlrRunning"]["attributes"][att]})
 	return result
 
-	
+def get_lag_policies():
+	pushurl = gui.call.baseurl+"/api/node/class/lacpLagPol.json?rsp-subtree=full&rsp-subtree-class=tagAliasInst"
+	message = "Getting List of LAG Policies"
+	data = get_calls(pushurl, message)
+	result = []
+	for policy in data["imdata"]:
+		result.append(policy["lacpLagPol"]["attributes"]["name"])
+	return result
+
+def get_infra_policies():
+	pushurl = gui.call.baseurl+"/api/node/mo/uni/infra.json?query-target=children"
+	message = "Getting List of Interface Policies"
+	data = get_calls(pushurl, message)
+	result = {"lacpLagPol": [], "cdpIfPol": [], "lldpIfPol": [], "infraAttEntityP": []}
+	for policy in data["imdata"]:
+		policytype = list(policy)[0]
+		if policytype in result:
+			result[policytype].append(policy[policytype]["attributes"]["name"])
+	return result
+
+def get_leaves():
+	pushurl = gui.call.baseurl+'/api/node/class/fabricNode.json?query-target-filter=and(eq(fabricNode.role,"leaf"))'
+	message = "Getting List of Leaf Switches"
+	data = get_calls(pushurl, message)
+	preresult = {}
+	for node in data["imdata"]:
+		preresult.update({node["fabricNode"]["attributes"]["id"]: node["fabricNode"]["attributes"]})
+	nodelist = list(preresult)
+	nodelist.sort()
+	result = []
+	for node in nodelist:
+		result.append(preresult[node])
+	return result
+
+
+
 
 ################################## C H E C K   D O M A I N   N A M E ##################################
 #######################################################################################################
@@ -1689,13 +2276,80 @@ def make_table(columnorder, tabledata):
 #######################################################################################################
 
 
+######################################### N A M E D  R A N G E #########################################
+########################################################################################################
+'''
+- Create a shorthand name for a list of integers; shortening the consecutive integers into 
+    range statements, ie: [1, 2, 3, 4, 6] becomes "1-4_6"
+- The inputlist input is a list of integers or strings of integers (or a mix), prepend adds a
+    string to the beginning of each number, divider is used to separate statements
+- The output is string which contains the shorthand name with prepends and dividers
+'''
+def named_range(inputlist, prepend="", divider="_"):
+	#### Convert to integers and sort ####
+	sorted = []
+	for num in inputlist:
+		sorted.append(int(num))
+	sorted.sort()
+	###################################################
+	#### Set some variables to be used in ranging ####
+	statements = []  # Statements are put in a list for assembly later
+	prevnumber = None  # The previously processed number
+	firstnumber = None  # The first number in a range (ie: 1, 2, 3, 4...)
+	range = False
+	##########################
+	#### Ranging Process #####
+	for currentnumber in sorted:
+		if prevnumber == None:  # If this is the first iteration of the for loop
+			currentstatement = str(currentnumber)
+			firstnumber = currentnumber
+		elif currentnumber == prevnumber + 1:  # If this number is 1 more than the last
+			currentstatement = [str(firstnumber), str(currentnumber)]
+			range = True
+		else:
+			if range:  # We just exited a range of numbers
+				statements.append(currentstatement)
+				firstnumber = currentnumber
+				currentstatement = str(currentnumber)
+				range = False
+			elif not range:
+				statements.append(currentstatement)
+				firstnumber = currentnumber
+				currentstatement = str(currentnumber)
+		prevnumber = currentnumber
+	statements.append(currentstatement)  # Append last updated statement after for loop ends
+	############################################
+	#### Assemble the Statements into name and return ####
+	name = ""
+	for statement in statements:
+		if type(statement) == type(""):
+			name += divider + prepend + statement
+		elif type(statement) == type([]):
+			name += divider + prepend + statement[0] + "-" + prepend + statement[1]
+	result = (name[1:], statements)
+	return result
+
+########################################## USAGE AND EXAMPLES #########################################
+#
+#>>> inputlist = ["2", 100, 101, 102, 103, 105]
+#
+#>>> named_range(inputlist, prepend="L")
+#
+#######################################################################################################
+#######################################################################################################
 
 
+def generate_hex():
+	time.clock()  # Return first value to discard it
+	curtime = str(time.clock()).replace(".", "")
+	return "ac1d"+curtime[len(curtime)-12:len(curtime)]
+	
+#######################################################################################################
 
 def modify_pref_setting():
-	if gui.bw.prefsoverwritevar.get() == 1:
+	if gui.safemodevar.get() == 1:
 		return "created"
-	elif gui.bw.prefsoverwritevar.get() == 0:
+	elif gui.safemodevar.get() == 0:
 		return "created,modified"
 
 
@@ -1846,7 +2500,7 @@ def assign_bgp_rr(bgp_rr_nodeid):
 	return (uri, data)
 
 
-########################## Interface Profiles ##########################
+########################## Interface Policies ##########################
 def ifprof_cdp_enabled(name):
 	###JSON Data###
 	data = {
@@ -2210,7 +2864,93 @@ def assign_mgmt_ip(podid, nodeid, cidr, gateway):
 	return (uri, data, desc)
 
 
+#rangelist = [["202", "203"], "205"]
+#profilename = "TEST_PROF"
+#selecname = "TEST_SELEC"
+def create_leaf_profile(profilename, selecname, rangelist):
+	###Range Creation###
+	blockselections = []
+	for range in rangelist:
+		blockhex = generate_hex()
+		if type(range) == type([]):
+			from_id = range[0]
+			to_id = range[1]
+		else:
+			from_id = range
+			to_id = range
+		rangetemplate = {
+    "infraNodeBlk": {
+        "attributes": {
+            "dn": "uni/infra/nprof-"+profilename+"/leaves-"+selecname+"-typ-range/nodeblk-"+blockhex,
+            "from_": from_id,
+            "name": blockhex,
+            "rn": "nodeblk-"+blockhex,
+            "status": "created",
+            "to_": to_id
+        },
+        "children": []
+    }
+}
+		blockselections.append(rangetemplate)
+	###JSON Data###
+	data = {
+    "infraNodeP": {
+        "attributes": {
+            "dn": "uni/infra/nprof-"+profilename,
+            "name": profilename,
+            "rn": "nprof-"+profilename,
+            "status": modify_pref_setting()
+        },
+        "children": [
+            {
+                "infraLeafS": {
+                    "attributes": {
+                        "dn": "uni/infra/nprof-"+profilename+"/leaves-"+selecname+"-typ-range",
+                        "name": selecname,
+                        "rn": "leaves-"+selecname+"-typ-range",
+                        "status": "created",
+                        "type": "range"
+                    },
+                    "children": blockselections
+                }
+            }
+        ]
+    }
+}
+	###################
+	uri = "/api/node/mo/uni/infra/nprof-"+profilename+".json"
+	desc = "Create Leaf Profile"
+	return (uri, data, desc)
 
+
+def create_vpc_pol_grp(name, lagpol):
+	###JSON Data###
+	data = {
+    "infraAccBndlGrp": {
+        "attributes": {
+            "dn": "uni/infra/funcprof/accbundle-"+name,
+            "lagT": "node",
+            "name": name,
+            "rn": "accbundle-"+name,
+            "status": "created"
+        },
+        "children": [
+            {
+                "infraRsLacpPol": {
+                    "attributes": {
+                        "status": modify_pref_setting(),
+                        "tnLacpLagPolName": lagpol
+                    },
+                    "children": []
+                }
+            }
+        ]
+    }
+}
+	###################
+	uri = "/api/node/mo/uni/infra/funcprof/accbundle-"+name+".json"
+	desc = "Create VPC Policy Group"
+	return (uri, data, desc)
 
 
 
