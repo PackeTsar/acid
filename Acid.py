@@ -9,7 +9,7 @@
 #### All imported libraries are native to (included in) Python 2.7.X+ and 3.6.X+ ####
 
 # Set some global variables here
-version = "0.5.2"
+version = "0.5.3"
 
 
 # Import libraries with names common to Python2 and Python3
@@ -1387,11 +1387,12 @@ class ports:
 		self.bwscroll.config(command=self.bwcanvas.yview)
 		self.interior_id = self.bwcanvas.create_window(0, 0, window=self.bw, anchor=tk.N+tk.W)
 		self.bwcanvas.bind('<Configure>', lambda event, a=self.bwcanvas, b=self.interior_id:self.on_configure(event, a, b))
-		#self.bwcanvas.bind('<Configure>', self.on_configure)
 		self.bwcanvas.bind_all("<MouseWheel>", self.on_mousewheel)
 		self.bwcanvas.configure(scrollregion=self.bwcanvas.bbox("all"))
 		self.basicwindow.wm_protocol("WM_DELETE_WINDOW", self.close)
 		self.publishedswitches = []
+		self.tickedinterfaces = []
+		self.publishedinterfaces = []
 		######## LEAF PROFILES ########
 		self.leafprofframe = tk.Frame(self.bw, borderwidth=4, relief=tk.RAISED)
 		self.leafprofframe.pack(fill=tk.BOTH, expand=tk.YES)
@@ -1454,11 +1455,15 @@ class ports:
 		self.vpchead = tk.Label(self.vpcheadframe, text="Create Virtual Port-Channel (vPC)", font=("Helvetica", 12, "bold"))
 		self.vpchead.grid(row=0, column=0)
 		#########
-		self.vpclistsupdatebutton = tk.Button(self.vpcframe, text='Update Lists', command=self.submit_leaf_profile)
+		self.vpclistsupdatebutton = tk.Button(self.vpcframe, text='Update Lists', command=self.update_policy_lists)
 		self.vpclistsupdatebutton.grid(row=1, column=0, columnspan=2)
+		self.vpcupdatechecktext = tk.StringVar()
+		self.vpcupdatechecktext.set("")
+		self.vpcupdatechecklabel = tk.Label(self.vpcframe, textvariable=self.vpcupdatechecktext)
+		self.vpcupdatechecklabel.grid(row=2, column=0, columnspan=2)
 		#########
 		self.vpcpolgrpframe = tk.Frame(self.vpcframe, borderwidth=1, relief=tk.SUNKEN)
-		self.vpcpolgrpframe.grid(row=2, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.vpcpolgrpframe.grid(row=3, column=0, sticky=tk.N+tk.S+tk.W+tk.E)
 		self.vpcpolgrpframe.grid_columnconfigure(1, weight=1)
 		self.vpcpolgrpfrmheader = tk.Label(self.vpcpolgrpframe, text="Policy Group Settings", font=("Helvetica", 8, "bold"))
 		self.vpcpolgrpfrmheader.grid(row=0, column=0, columnspan=2)
@@ -1473,54 +1478,59 @@ class ports:
 		command=self.tick_vpcpolgrpnameauto)
 		self.vpcpolgrpauto.grid(row=3, column=0, columnspan=2)
 		####
-		self.vpcaaeplabel = tk.Label(self.vpcpolgrpframe, text="Attachable Entity Profile", pady=10)
+		self.vpcaaeplabel = tk.Label(self.vpcpolgrpframe, text="Attachable Entity Profile", pady=14)
 		self.vpcaaeplabel.grid(row=4, column=0, sticky=tk.E)
+		self.vpcaaepdefault = "Select an AAEP"
 		self.vpcaaepvar = tk.StringVar(self.vpcpolgrpframe)
-		self.vpcaaepvar.set("Select an AAEP")
+		self.vpcaaepvar.set(self.vpcaaepdefault)
 		self.vpcaaep = ttk.Combobox(self.vpcpolgrpframe, textvariable=self.vpcaaepvar, width=30)
 		self.vpcaaep.state(['readonly'])
 		self.vpcaaep.grid(row=4, column=1)
 		####
-		self.vpclaglabel = tk.Label(self.vpcpolgrpframe, text="Port-Channel Policy", pady=10)
+		self.vpclaglabel = tk.Label(self.vpcpolgrpframe, text="Port-Channel Policy", pady=14)
 		self.vpclaglabel.grid(row=5, column=0, sticky=tk.E)
+		self.vpclagdefault = "Select a Port-Channel Policy"
 		self.vpclagvar = tk.StringVar(self.vpcpolgrpframe)
-		self.vpclagvar.set("Select a Port-Channel Policy")
+		self.vpclagvar.set(self.vpclagdefault)
 		self.vpclag = ttk.Combobox(self.vpcpolgrpframe, textvariable=self.vpclagvar, width=30)
 		self.vpclag.state(['readonly'])
 		self.vpclag.grid(row=5, column=1)
 		####
 		self.vpccdpcheckbuttonvar = tk.IntVar(value=1)
 		self.vpccdpcheckbutton = tk.Checkbutton(self.vpcpolgrpframe, text="CDP Policy", variable=self.vpccdpcheckbuttonvar, 
-		command=lambda: self.disable_combobox(self.vpccdp, self.vpccdpcheckbuttonvar), pady=8)
+		command=lambda: self.disable_combobox(self.vpccdp, self.vpccdpcheckbuttonvar), pady=12)
 		self.vpccdpcheckbutton.grid(row=6, column=0, sticky=tk.E)
+		self.vpccdpdefault = "Select a CDP Policy"
 		self.vpccdpvar = tk.StringVar(self.vpcpolgrpframe)
-		self.vpccdpvar.set("Select a CDP Policy")
+		self.vpccdpvar.set(self.vpccdpdefault)
 		self.vpccdp = ttk.Combobox(self.vpcpolgrpframe, textvariable=self.vpccdpvar, width=30)
 		self.vpccdp.state(['readonly'])
 		self.vpccdp.grid(row=6, column=1)
 		####
 		self.vpclldpcheckbuttonvar = tk.IntVar(value=1)
 		self.vpclldpcheckbutton = tk.Checkbutton(self.vpcpolgrpframe, text="LLDP Policy", variable=self.vpclldpcheckbuttonvar, 
-		command=lambda: self.disable_combobox(self.vpclldp, self.vpclldpcheckbuttonvar), pady=8)
+		command=lambda: self.disable_combobox(self.vpclldp, self.vpclldpcheckbuttonvar), pady=12)
 		self.vpclldpcheckbutton.grid(row=7, column=0, sticky=tk.E)
+		self.vpclldpdefault = "Select a LLDP Policy"
 		self.vpclldpvar = tk.StringVar(self.vpcpolgrpframe)
-		self.vpclldpvar.set("Select a LLDP Policy")
+		self.vpclldpvar.set(self.vpclldpdefault)
 		self.vpclldp = ttk.Combobox(self.vpcpolgrpframe, textvariable=self.vpclldpvar, width=30)
 		self.vpclldp.state(['readonly'])
 		self.vpclldp.grid(row=7, column=1)
 		####
 		self.vpclinkcheckbuttonvar = tk.IntVar(value=1)
 		self.vpclinkcheckbutton = tk.Checkbutton(self.vpcpolgrpframe, text="Link Policy", variable=self.vpclinkcheckbuttonvar, 
-		command=lambda: self.disable_combobox(self.vpclink, self.vpclinkcheckbuttonvar), pady=8)
+		command=lambda: self.disable_combobox(self.vpclink, self.vpclinkcheckbuttonvar), pady=12)
 		self.vpclinkcheckbutton.grid(row=8, column=0, sticky=tk.E)
+		self.vpclinkdefault = "Select a Link Policy"
 		self.vpclinkvar = tk.StringVar(self.vpcpolgrpframe)
-		self.vpclinkvar.set("Select a Link Policy")
+		self.vpclinkvar.set(self.vpclinkdefault)
 		self.vpclink = ttk.Combobox(self.vpcpolgrpframe, textvariable=self.vpclinkvar, width=30)
 		self.vpclink.state(['readonly'])
 		self.vpclink.grid(row=8, column=1)
 		##################################
 		self.vpcintprofframe = tk.Frame(self.vpcframe, borderwidth=1, relief=tk.SUNKEN)
-		self.vpcintprofframe.grid(row=2, column=1, sticky=tk.N+tk.S+tk.W+tk.E)
+		self.vpcintprofframe.grid(row=3, column=1, sticky=tk.N+tk.S+tk.W+tk.E)
 		self.vpcintprofframe.grid_columnconfigure(0, weight=1)
 		self.vpcintprofframe.grid_columnconfigure(1, weight=1)
 		self.vpcintproffrmheader = tk.Label(self.vpcintprofframe, text="Interface Profile Settings", font=("Helvetica", 8, "bold"))
@@ -1528,13 +1538,16 @@ class ports:
 		####
 		self.vpcintprofheader = tk.Label(self.vpcintprofframe, text="Interface Profile Name")
 		self.vpcintprofheader.grid(row=1, column=0, columnspan=3)
-		self.vpcintprofentry = tk.Entry(self.vpcintprofframe, bd=5, width=45)
+		self.vpcintprofentrystr = tk.StringVar()
+		self.vpcintprofentrystr.trace("w", lambda *args: self.policy_group_auto_name())
+		self.vpcintprofentry = tk.Entry(self.vpcintprofframe, textvariable=self.vpcintprofentrystr, bd=5, width=45)
 		self.vpcintprofentry.grid(row=2, column=0, columnspan=3)
 		####
 		self.vpcleafproflabel = tk.Label(self.vpcintprofframe, text="Switch Selector Profile", pady=15)
 		self.vpcleafproflabel.grid(row=3, column=0, sticky=tk.E)
+		self.vpcleafprofdefault = "Select a Switch Selector Profile"
 		self.vpcleafprofvar = tk.StringVar(self.vpcintprofframe)
-		self.vpcleafprofvar.set("Select a Port-Channel Policy")
+		self.vpcleafprofvar.set(self.vpcleafprofdefault)
 		self.vpcleafprof = ttk.Combobox(self.vpcintprofframe, textvariable=self.vpcleafprofvar, width=30)
 		self.vpcleafprof.state(['readonly'])
 		self.vpcleafprof.grid(row=3, column=1)
@@ -1552,8 +1565,15 @@ class ports:
 		self.vpcportselauto = tk.Checkbutton(self.vpcselframe, text="Auto Name", variable=self.vpcportselautovar, 
 		command=self.tick_vpcportselnameauto)
 		self.vpcportselauto.grid(row=1, column=1)
-		self.vpcupdateintbutton = tk.Button(self.vpcselframe, text='Update Interface List', command=self.close)
-		self.vpcupdateintbutton.grid(row=2, column=0, columnspan=2)
+		####
+		self.vpcintupdateframe = tk.Frame(self.vpcselframe)
+		self.vpcintupdateframe.grid(row=2, column=0, columnspan=2)
+		self.vpcupdateintbutton = tk.Button(self.vpcintupdateframe, text='Update Interface List', command=self.update_switch_interfaces)
+		self.vpcupdateintbutton.grid(row=0, column=0)
+		self.vpcupdateintchecktext = tk.StringVar()
+		self.vpcupdateintchecktext.set("")
+		self.vpcupdateintchecklabel = tk.Label(self.vpcintupdateframe, textvariable=self.vpcupdateintchecktext)
+		self.vpcupdateintchecklabel.grid(row=1, column=0)
 		####
 		self.vpcinttopframe = tk.Frame(self.vpcselframe, borderwidth=1, relief=tk.SUNKEN)
 		self.vpcinttopframe.grid(row=3, column=0, sticky=tk.N+tk.S+tk.W+tk.E, columnspan=2)
@@ -1572,14 +1592,27 @@ class ports:
 		self.vpcintcanvas.configure(scrollregion=self.vpcintcanvas.bbox("all"))
 		####
 		self.vpcsubmitframe = tk.Frame(self.vpcframe, borderwidth=1, relief=tk.SUNKEN)
-		self.vpcsubmitframe.grid(row=3, column=0, sticky=tk.N+tk.S+tk.W+tk.E, columnspan=2)
+		self.vpcsubmitframe.grid(row=4, column=0, sticky=tk.N+tk.S+tk.W+tk.E, columnspan=2)
 		self.vpcsubmitframe.grid_columnconfigure(0, weight=1)
-		self.vpcsubmitbutton = tk.Button(self.vpcsubmitframe, text='Submit vPC Configuration', command=self.submit_leaf_profile)
-		self.vpcsubmitbutton.grid(row=0, column=0)
-		self.vpcsubmitchecktext = tk.StringVar()
-		self.vpcsubmitchecktext.set("Check Text")
-		self.vpcsubmitchecklabel = tk.Label(self.vpcsubmitframe, textvariable=self.vpcsubmitchecktext)
-		self.vpcsubmitchecklabel.grid(row=1, column=0)
+		self.vpcsubmitframe.grid_columnconfigure(1, weight=1)
+		self.vpcsubmitframe.grid_columnconfigure(2, weight=1)
+		self.vpcsubmitbutton = tk.Button(self.vpcsubmitframe, text='Submit vPC Configuration', command=self.submit_vpc)
+		self.vpcsubmitbutton.grid(row=0, column=0, columnspan=3)
+		####
+		self.vpcsubmitpolgrpchecktext = tk.StringVar()
+		self.vpcsubmitpolgrpchecktext.set("")
+		self.vpcsubmitpolgrpchecklabel = tk.Label(self.vpcsubmitframe, textvariable=self.vpcsubmitpolgrpchecktext)
+		self.vpcsubmitpolgrpchecklabel.grid(row=1, column=0)
+		####
+		self.vpcsubmitintprofchecktext = tk.StringVar()
+		self.vpcsubmitintprofchecktext.set("")
+		self.vpcsubmitintprofchecklabel = tk.Label(self.vpcsubmitframe, textvariable=self.vpcsubmitintprofchecktext)
+		self.vpcsubmitintprofchecklabel.grid(row=1, column=1)
+		####
+		self.vpcsubmitassochecktext = tk.StringVar()
+		self.vpcsubmitassochecktext.set("")
+		self.vpcsubmitassochecklabel = tk.Label(self.vpcsubmitframe, textvariable=self.vpcsubmitassochecktext)
+		self.vpcsubmitassochecklabel.grid(row=1, column=2)
 		######## CLOSE ########
 		self.closeframe = tk.Frame(self.bw)
 		self.closeframe.pack(fill=tk.BOTH, expand=tk.YES)
@@ -1600,19 +1633,6 @@ class ports:
 			width = str(self.basicwindow.winfo_width())
 			height = str(self.bwcanvas.bbox("all")[3] + 10)
 			self.basicwindow.geometry(width+'x'+height)
-	def update_lag_policies(self):
-		if gui.login_check():
-			data = get_lag_policies()
-			print(data)
-	def test(self):
-		if gui.login_check():
-			data = get_infra_policies()
-			print(data)
-	#def disable_entry(self, entryobj, checkboxobj):
-	#	if checkboxobj.get() == 0:
-	#		entryobj.config(state='disabled')
-	#	elif checkboxobj.get() == 1:
-	#		entryobj.config(state='normal')
 	def disable_entry_inverted(self, entryobj, checkboxobj):
 		if checkboxobj.get() == 1:
 			entryobj.config(state='disabled')
@@ -1628,8 +1648,10 @@ class ports:
 		self.update_leaf_profile_name()
 	def tick_vpcpolgrpnameauto(self):
 		self.disable_entry_inverted(self.vpcpolgrpentry, self.vpcpolgrpautovar)
+		self.policy_group_auto_name()
 	def tick_vpcportselnameauto(self):
 		self.disable_entry_inverted(self.vpcportselentry, self.vpcportselautovar)
+		self.interface_selector_auto_name()
 	def update_leaf_list(self):
 		if gui.login_check():
 			data = get_leaves()
@@ -1689,7 +1711,210 @@ class ports:
 					else:
 						self.leafprofsubmitchecktext.set("Post Failed")
 						self.leafprofsubmitchecklabel.configure(fg="red")
-					gui.write_output(gui.header(35, "Leaf Profile Push Complete", 2))		
+					gui.write_output(gui.header(35, "Leaf Profile Push Complete", 2))
+	def update_policy_lists(self):
+		if gui.login_check():
+			self.vpcupdatechecktext.set("Updating...")
+			self.vpcupdatechecklabel.configure(fg="black")
+			data = get_infra_policies()
+			mappings = {"infraAttEntityP": self.vpcaaep, "lacpLagPol": self.vpclag, "cdpIfPol": self.vpccdp,
+			"lldpIfPol": self.vpclldp, "fabricHIfPol": self.vpclink, "infraNodeP": self.vpcleafprof}
+			for policyset in data:
+				comboboxobj = mappings[policyset]
+				policylist = []
+				for policy in data[policyset]:
+					policylist.append(policy["name"])
+				comboboxobj['values'] = policylist
+			self.vpcupdatechecktext.set("Updated")
+			self.vpcupdatechecklabel.configure(fg="green4")
+	def update_switch_interfaces(self):
+		if gui.login_check():
+			self.vpcupdateintchecktext.set("Updating...")
+			self.vpcupdateintchecklabel.configure(fg="black")
+			self.vpcleafproflabel.configure(fg="black")
+			if self.vpcleafprof.get() == self.vpcleafprofdefault:
+				self.vpcupdateintchecktext.set("Select a Switch Selector First")
+				self.vpcupdateintchecklabel.configure(fg="red")
+				self.vpcleafproflabel.configure(fg="red")
+			else:
+				checkswitchids = get_leaf_profile_switchids(self.vpcleafprof.get())
+				switches = get_leaves()
+				interfacedict = {}
+				for switchid in checkswitchids:
+					for switch in switches:
+						if switch["id"] == switchid:
+							podid = switch["podid"]
+							interfaces = get_switch_interfaces(podid, switchid)
+							interfacelist = []
+							for interface in interfaces:
+								interfacelist.append(interface["id"])
+							interfacedict.update({switchid: interfacelist})
+				if interfacedict == {}:
+					self.vpcupdateintchecktext.set("No Switches in Switch Selector")
+					self.vpcupdateintchecklabel.configure(fg="yellow3")
+				else:
+					#### List only common interfaces ####
+					dictcounter = {}
+					for switch in interfacedict:
+						for interface in interfacedict[switch]:
+							if interface not in dictcounter:
+								dictcounter.update({interface: 1})
+							else:
+								dictcounter[interface] += 1
+					finalinterfacelist = []
+					for interface in dictcounter:
+						if dictcounter[interface] == len(interfacedict):
+							finalinterfacelist.append(interface)
+					if finalinterfacelist == []:
+						self.vpcupdateintchecktext.set("No Common Interfaces in Switches")
+						self.vpcupdateintchecklabel.configure(fg="yellow3")
+					else:
+						finalinterfacelist = sort_interfaces(finalinterfacelist)
+						rowindex = 0
+						self.publishedinterfaces = []
+						for interface in finalinterfacelist:
+							interfaceobjvar = tk.IntVar(value=0)
+							interfaceobj = tk.Checkbutton(self.vpcintframe, text=interface, variable=interfaceobjvar, 
+							command= lambda: self.interface_selector_auto_name())
+							interfaceobj.grid(row=rowindex, column=0)
+							shortname = re.findall("[0-9]+$", interface)[0]
+							self.publishedinterfaces.append({"id": interface, "shortname": shortname, "intvar": interfaceobjvar, "checkbutton": interfaceobj})
+							rowindex += 1
+						self.vpcintcanvas.update()
+						self.vpcintcanvas.configure(scrollregion=self.vpcintcanvas.bbox("all"))
+						self.vpcupdateintchecktext.set("Updated")
+						self.vpcupdateintchecklabel.configure(fg="green4")
+	def get_port_selector_autoname(self):
+		self.tickedinterfaces = []
+		for interface in self.publishedinterfaces:
+			if interface['intvar'].get() == 1:
+				self.tickedinterfaces.append(interface['shortname'])
+		if len(self.tickedinterfaces) == 0:
+			return ""
+		else:
+			return named_range(self.tickedinterfaces, prepend="Port")[0]
+	def interface_selector_auto_name(self):
+		text = self.get_port_selector_autoname()
+		if self.vpcportselautovar.get() == 1:
+			self.vpcportselentry.config(state='normal')
+			self.vpcportselentry.delete(0, 'end')
+			self.vpcportselentry.insert(tk.END, text)
+			self.vpcportselentry.config(state='disabled')
+	def policy_group_auto_name(self, *args):
+		if self.vpcpolgrpautovar.get() == 1:
+			self.vpcpolgrpentry.config(state='normal')
+			self.vpcpolgrpentry.delete(0, 'end')
+			text = self.vpcintprofentrystr.get()
+			self.vpcpolgrpentry.insert(tk.END, text)
+			self.vpcpolgrpentry.config(state='disabled')
+	def submit_vpc(self):
+		if gui.login_check():
+			dropdownoptions = [
+				{"name": "aaep", "entry": self.vpcaaep, "default": self.vpcaaepdefault, "label": self.vpcaaeplabel, "ticked": 1},
+				{"name": "lag", "entry": self.vpclag, "default": self.vpclagdefault, "label": self.vpclaglabel, "ticked": 1},
+				{"name": "leafprof", "entry": self.vpcleafprof, "default": self.vpcleafprofdefault, "label": self.vpcleafproflabel, "ticked": 1},
+				{"name": "cdp", "entry": self.vpccdp, "default": self.vpccdpdefault, "label": self.vpccdpcheckbutton, "ticked": self.vpccdpcheckbuttonvar.get()},
+				{"name": "lldp", "entry": self.vpclldp, "default": self.vpclldpdefault, "label": self.vpclldpcheckbutton, "ticked": self.vpclldpcheckbuttonvar.get()},
+				{"name": "link", "entry": self.vpclink, "default": self.vpclinkdefault, "label": self.vpclinkcheckbutton, "ticked": self.vpclinkcheckbuttonvar.get()}]
+			entryboxes = [
+				{"entry": self.vpcintprofentry, "label": self.vpcintprofheader, "autoticked": 0},
+				{"entry": self.vpcpolgrpentry, "label": self.vpcpolgrpheader, "autoticked": self.vpcpolgrpautovar.get()},
+				{"entry": self.vpcportselentry, "label": self.vpcportsellabel, "autoticked": self.vpcportselautovar.get()},]
+			############ Check Inputs ############
+			### Check Drop Down Options ###
+			checksout = True
+			errormessages = {}
+			for box in dropdownoptions:
+				box["label"].configure(fg="black")
+				if box["ticked"] == 1:
+					if box["entry"].get() == box["default"]:
+						box["label"].configure(fg="red")
+						checksout = False
+						errormessages.update({1: " (Drop Down Unselected)"})
+			### Check Entry Boxes ###
+			for box in entryboxes:
+				box["entry"].configure(bg="white")
+				box["label"].configure(fg="black")
+				if not check_aciobjname_entry(box["entry"]):
+					box["label"].configure(fg="red")
+					checksout = False
+					errormessages.update({2: " (Entry Box Incorrect)"})
+			### Check Ticked Interfaces ###
+			if self.tickedinterfaces == []:
+				errormessages.update({3: " (No Interfaces Selected)"})
+				checksout = False
+			############ Report Errors ############
+			error = ""
+			for message in errormessages:
+				error += errormessages[message]
+			self.vpcsubmitpolgrpchecktext.set("")
+			self.vpcsubmitpolgrpchecklabel.configure(fg="black")
+			self.vpcsubmitintprofchecktext.set("")
+			self.vpcsubmitintprofchecklabel.configure(fg="black")
+			self.vpcsubmitassochecktext.set("")
+			self.vpcsubmitassochecklabel.configure(fg="black")
+			if not checksout:
+				self.vpcsubmitintprofchecktext.set(error)
+				self.vpcsubmitintprofchecklabel.configure(fg="red")
+			else:
+				############ Process Inputs ############
+				policygroupname = self.vpcpolgrpentry.get()
+				valuedict = {"aaep": False, "lag": False, "cdp": False , "lldp": False, "link": False}
+				for box in dropdownoptions:
+					if box["ticked"] == 1:
+						valuedict[box["name"]] = box["entry"].get()
+				####
+				profilename = self.vpcintprofentry.get()
+				selectorname = self.vpcportselentry.get()
+				interfacerange = named_range(self.tickedinterfaces)[1]  # Range of interfaces for profile selector
+				############ Execute Policy Group ############
+				self.vpcsubmitpolgrpchecktext.set("Attempting Post...")
+				self.pushdatatup = create_vpc_interface_policy_group(policygroupname, valuedict)
+				self.pushurl = gui.call.baseurl+self.pushdatatup[0]
+				self.pushdata = self.pushdatatup[1]
+				gui.write_output("\n\n\n"+gui.header(35, "Pushing Interface Policy Group", 2))
+				gui.write_send_header_body(self.pushurl, self.pushdata)
+				self.response = gui.post(url=self.pushurl, data=self.pushdata)
+				gui.write_response_header_body(self.response)
+				if self.response.getcode() == 200:
+					self.vpcsubmitpolgrpchecktext.set("(Policy Group: Success)")
+					self.vpcsubmitpolgrpchecklabel.configure(fg="green4")
+				else:
+					self.vpcsubmitpolgrpchecktext.set("(Policy Group: Failed)")
+					self.vpcsubmitpolgrpchecklabel.configure(fg="red")
+				gui.write_output(gui.header(35, "Interface Policy Group Push Complete", 2))
+				############ Execute Interface Profile ############
+				self.vpcsubmitintprofchecktext.set("Attempting Post...")
+				self.pushdatatup = create_vpc_interface_profile(profilename, selectorname, policygroupname, interfacerange)
+				self.pushurl = gui.call.baseurl+self.pushdatatup[0]
+				self.pushdata = self.pushdatatup[1]
+				gui.write_output("\n\n\n"+gui.header(35, "Pushing Interface Profile", 2))
+				gui.write_send_header_body(self.pushurl, self.pushdata)
+				self.response = gui.post(url=self.pushurl, data=self.pushdata)
+				gui.write_response_header_body(self.response)
+				if self.response.getcode() == 200:
+					self.vpcsubmitintprofchecktext.set("(Interface Profile: Success)")
+					self.vpcsubmitintprofchecklabel.configure(fg="green4")
+				else:
+					self.vpcsubmitintprofchecktext.set("(Interface Profile: Failed)")
+					self.vpcsubmitintprofchecklabel.configure(fg="red")
+				gui.write_output(gui.header(35, "Interface Profile Push Complete", 2))
+				############ Execute Profile Association ############
+				self.vpcsubmitassochecktext.set("Attempting Post...")
+				self.pushdatatup = associate_intprofile_leafprofile(profilename, self.vpcleafprof.get())
+				self.pushurl = gui.call.baseurl+self.pushdatatup[0]
+				self.pushdata = self.pushdatatup[1]
+				gui.write_output("\n\n\n"+gui.header(35, "Pushing Profile Association", 2))
+				gui.write_send_header_body(self.pushurl, self.pushdata)
+				self.response = gui.post(url=self.pushurl, data=self.pushdata)
+				gui.write_response_header_body(self.response)
+				if self.response.getcode() == 200:
+					self.vpcsubmitassochecktext.set("(Leaf Association: Success)")
+					self.vpcsubmitassochecklabel.configure(fg="green4")
+				else:
+					self.vpcsubmitassochecktext.set("(Leaf Association: Failed)")
+					self.vpcsubmitassochecklabel.configure(fg="red")
+				gui.write_output(gui.header(35, "Profile Association Push Complete", 2))
 	def close(self):
 		gui.portsopen = False
 		self.basicwindow.destroy()
@@ -2053,11 +2278,25 @@ def get_infra_policies():
 	pushurl = gui.call.baseurl+"/api/node/mo/uni/infra.json?query-target=children"
 	message = "Getting List of Interface Policies"
 	data = get_calls(pushurl, message)
-	result = {"lacpLagPol": [], "cdpIfPol": [], "lldpIfPol": [], "infraAttEntityP": []}
+	result = {"lacpLagPol": [], "cdpIfPol": [], "lldpIfPol": [], "infraAttEntityP": [], "fabricHIfPol": [], "infraNodeP": []}
 	for policy in data["imdata"]:
 		policytype = list(policy)[0]
 		if policytype in result:
-			result[policytype].append(policy[policytype]["attributes"]["name"])
+			result[policytype].append(policy[policytype]["attributes"])
+	return result
+
+def get_leaf_profile_switchids(profilename):
+	pushurl = gui.call.baseurl+"/api/node/mo/uni/infra/nprof-"+profilename+".json?query-target=subtree&target-subtree-class=infraLeafS&target-subtree-class=infraNodeBlk,infraRsAccNodePGrp&query-target=subtree"
+	message = "Getting Leaf Profile "+ profilename
+	data = get_calls(pushurl, message)
+	blockgroups = []
+	for block in data["imdata"]:
+		for blockcode in block:
+			if blockcode == "infraNodeBlk":
+				fromval = block[blockcode]["attributes"]["from_"]
+				toval = block[blockcode]["attributes"]["to_"]
+				blockgroups.append([fromval, toval])
+	result = expand_ranges(blockgroups)
 	return result
 
 def get_leaves():
@@ -2066,7 +2305,9 @@ def get_leaves():
 	data = get_calls(pushurl, message)
 	preresult = {}
 	for node in data["imdata"]:
-		preresult.update({node["fabricNode"]["attributes"]["id"]: node["fabricNode"]["attributes"]})
+		leafid = node["fabricNode"]["attributes"]["id"]
+		preresult.update({leafid: node["fabricNode"]["attributes"]})
+		preresult[leafid].update({"podid": get_switch_pod_id(node["fabricNode"]["attributes"])})
 	nodelist = list(preresult)
 	nodelist.sort()
 	result = []
@@ -2074,8 +2315,22 @@ def get_leaves():
 		result.append(preresult[node])
 	return result
 
+def get_switch_interfaces(podid, switchid):
+	pushurl = gui.call.baseurl+"/api/node/class/topology/pod-"+podid+"/node-"+switchid+"/l1PhysIf.json"
+	message = "Getting List Switch Interfaces"
+	data = get_calls(pushurl, message)
+	preresult = {}
+	iflist = []
+	for interface in data['imdata']:
+		preresult.update({interface["l1PhysIf"]["attributes"]["id"]: interface["l1PhysIf"]["attributes"]})
+		iflist.append(interface["l1PhysIf"]["attributes"]["id"])
+	iflist = sort_interfaces(iflist)
+	result = []
+	for interface in iflist:
+		result.append(preresult[interface])
+	return result
 
-
+"/api/node/mo/uni/infra.json?query-target=subtree&target-subtree-class=infraNodeP&target-subtree-class=infraLeafS,infraNodeBlk,infraRsAccNodePGrp&query-target=subtree"
 
 ################################## C H E C K   D O M A I N   N A M E ##################################
 #######################################################################################################
@@ -2338,12 +2593,46 @@ def named_range(inputlist, prepend="", divider="_"):
 #######################################################################################################
 #######################################################################################################
 
+def expand_ranges(rangeslist):
+	result = []
+	for rangevar in rangeslist:
+		fromint = int(rangevar[0])
+		toint = int(rangevar[1])
+		if fromint == toint:
+			result.append(str(fromint))
+		else:
+			idlist = list(range(fromint,toint+1))
+			for id in idlist:
+				result.append(str(id))
+	return result
 
 def generate_hex():
 	time.clock()  # Return first value to discard it
 	curtime = str(time.clock()).replace(".", "")
 	return "ac1d"+curtime[len(curtime)-12:len(curtime)]
-	
+
+
+def sort_interfaces(interfacelist):
+	result = []
+	tempintlist = []
+	tempmapdict = {}
+	for interface in interfacelist:
+		intid = int(re.findall("[0-9]+$", str(interface))[0])
+		tempintlist.append(intid)
+		tempmapdict.update({intid: interface})
+	tempintlist.sort()
+	for interface in tempintlist:
+		result.append(str(tempmapdict[interface]))
+	return result
+
+
+def get_switch_pod_id(switchattributes):
+	dn = switchattributes["dn"]
+	podname = re.findall("pod-[0-9]+", dn)[0]
+	podid = re.findall("[0-9]+", podname)[0]
+	return podid
+
+
 #######################################################################################################
 
 def modify_pref_setting():
@@ -2923,7 +3212,27 @@ def create_leaf_profile(profilename, selecname, rangelist):
 	return (uri, data, desc)
 
 
-def create_vpc_pol_grp(name, lagpol):
+def create_vpc_interface_policy_group(name, valuedict):
+	mappings = [
+	{"policy": "infraRsAttEntP", "name": "tDn", "value": "uni/infra/attentp-"+str(valuedict["aaep"]), "create": valuedict["aaep"]},
+	{"policy": "infraRsLacpPol", "name": "tnLacpLagPolName", "value": valuedict["lag"], "create": valuedict["lag"]},
+	{"policy": "infraRsCdpIfPol", "name": "tnCdpIfPolName", "value": valuedict["cdp"], "create": valuedict["cdp"]},
+	{"policy": "infraRsLldpIfPol", "name": "tnLldpIfPolName", "value": valuedict["lldp"], "create": valuedict["lldp"]},
+	{"policy": "infraRsHIfPol", "name": "tnFabricHIfPolName", "value": valuedict["link"], "create": valuedict["link"]}]
+	###############
+	children = []
+	for child in mappings:
+		if child["create"]:
+			polgrpchild = {
+                child["policy"]: {
+                    "attributes": {
+                        "status": modify_pref_setting(),
+                        child["name"]: child["value"]
+                    },
+                    "children": []
+                }
+            }
+			children.append(polgrpchild)
 	###JSON Data###
 	data = {
     "infraAccBndlGrp": {
@@ -2932,25 +3241,107 @@ def create_vpc_pol_grp(name, lagpol):
             "lagT": "node",
             "name": name,
             "rn": "accbundle-"+name,
-            "status": "created"
+            "status": modify_pref_setting()
+        },
+        "children": children
+    }
+}
+	###################
+	uri = "/api/node/mo/uni/infra/funcprof/accbundle-"+name+".json"
+	desc = "Create Interface Policy Group"
+	return (uri, data, desc)
+
+
+
+def create_vpc_interface_profile(profilename, selectorname, policygroupname, interfacerange):
+	###Range Creation###
+	blockselections = []
+	blocknumber = 2
+	for range in interfacerange:
+		if type(range) == type([]):
+			from_id = range[0]
+			to_id = range[1]
+		else:
+			from_id = range
+			to_id = range
+		rangetemplate = {
+                            "infraPortBlk": {
+                                "attributes": {
+                                    "dn": "uni/infra/accportprof-"+profilename+"/hports-"+selectorname+"-typ-range/portblk-block"+str(blocknumber),
+                                    "fromPort": from_id,
+                                    "name": "block"+str(blocknumber),
+                                    "rn": "portblk-block"+str(blocknumber),
+                                    "status": modify_pref_setting(),
+                                    "toPort": to_id
+                                },
+                                "children": []
+                            }
+                        }
+		blockselections.append(rangetemplate)
+		blocknumber += 1
+	associatepolgroup = {
+                            "infraRsAccBaseGrp": {
+                                "attributes": {
+                                    "status": modify_pref_setting(),
+                                    "tDn": "uni/infra/funcprof/accbundle-"+policygroupname
+                                },
+                                "children": []
+                            }
+                        }
+	blockselections.append(associatepolgroup)
+	###JSON Data###
+	data = {
+    "infraAccPortP": {
+        "attributes": {
+            "dn": "uni/infra/accportprof-"+profilename,
+            "name": profilename,
+            "rn": "accportprof-"+profilename,
+            "status": modify_pref_setting()
         },
         "children": [
             {
-                "infraRsLacpPol": {
+                "infraHPortS": {
                     "attributes": {
-                        "status": modify_pref_setting(),
-                        "tnLacpLagPolName": lagpol
+                        "dn": "uni/infra/accportprof-"+profilename+"/hports-"+selectorname+"-typ-range",
+                        "name": selectorname,
+                        "rn": "hports-"+selectorname+"-typ-range",
+                        "status": modify_pref_setting()
                     },
-                    "children": []
+                    "children": blockselections
                 }
             }
         ]
     }
 }
 	###################
-	uri = "/api/node/mo/uni/infra/funcprof/accbundle-"+name+".json"
-	desc = "Create VPC Policy Group"
+	uri = "/api/node/mo/uni/infra/accportprof-"+profilename+".json"
+	desc = "Create Interface Profile"
 	return (uri, data, desc)
+
+
+def associate_intprofile_leafprofile(intprofilename, leafprofname):
+	###JSON Data###
+	data = {
+    "infraRsAccPortP": {
+        "attributes": {
+            "status": "created,modified",
+            "tDn": "uni/infra/accportprof-"+intprofilename
+        },
+        "children": []
+    }
+}
+	###################
+	uri = "/api/node/mo/uni/infra/nprof-"+leafprofname+".json"
+	desc = "Associate Interface Profile to Leaf Profile"
+	return (uri, data, desc)
+
+
+
+
+
+
+
+
 
 
 
