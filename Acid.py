@@ -57,10 +57,10 @@ except ImportError:
 
 
 # Auto-Populate Hostname, Username, Password fields for faster QA and testing (reset before commiting!)
-autologin = True
-hostname = "10.130.1.11"
+autologin = False
+hostname = "192.168.1.1"
 username = "admin"
-password = "mBQ32B&6Bv"
+password = "admin"
 
 
 #### Initial GUI Window with Credentials, Log Output, and buttons for child windows ####
