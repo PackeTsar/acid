@@ -5,8 +5,8 @@
 #####      http://blog.packetsar.com       #####
 #####  https://github.com/PackeTsar/acid   #####
 
-#### All code will work with Python 2.7.X+ and 3.6.X+ ####
-#### All imported libraries are native to (included in) Python 2.7.X+ and 3.6.X+ ####
+#### All code will work with Python 2.7.13+ and 3.6.X+ on Windows and OS X ####
+#### All imported libraries are native to (included in) Python 2.7.13+ and 3.6.X+ ####
 
 # Set some global variables here
 version = "0.5.3"
@@ -35,7 +35,6 @@ try:
 	from urllib.request import HTTPSHandler
 	# Python3 GUI Libraries
 	import tkinter as tk
-	from tkinter import ttk
 except ImportError:
 	# Python2 URL Libraries
 	from urllib2 import urlopen
@@ -48,7 +47,20 @@ except ImportError:
 	from urllib2 import HTTPSHandler
 	# Python2 GUI Libraries
 	import Tkinter as tk
+
+
+# Import ttk seperately due to unique OS X paths
+try:
 	from tkinter import ttk
+except ImportError:
+	import ttk
+
+
+# Auto-Populate Hostname, Username, Password fields for faster QA and testing (reset before commiting!)
+autologin = True
+hostname = "10.130.1.11"
+username = "admin"
+password = "mBQ32B&6Bv"
 
 
 #### Initial GUI Window with Credentials, Log Output, and buttons for child windows ####
@@ -163,13 +175,10 @@ class topwindow:
 		self.versionlabel = tk.Label(master, text=r"Version "+version,)
 		self.versionlabel.grid(row=7, column=2)
 		####################
-		# Uncomment and enter IP, username, and password to auto-populate Acid on start
-		# Makes testing much faster as you don't have to enter creds for every test
-		# Use only for QA and testing. Recomment and reset values before commiting
-		###
-		#self.ipaddressentry.insert(0, "192.168.1.1")
-		#self.usernameentry.insert(0, "admin")
-		#self.passwordentry.insert(0, "admin")
+		if autologin:
+			self.ipaddressentry.insert(0, hostname)
+			self.usernameentry.insert(0, username)
+			self.passwordentry.insert(0, password)
 		####################
 	def _login(self):
 		self.outputtext.set("")
@@ -3334,21 +3343,6 @@ def associate_intprofile_leafprofile(intprofilename, leafprofname):
 	uri = "/api/node/mo/uni/infra/nprof-"+leafprofname+".json"
 	desc = "Associate Interface Profile to Leaf Profile"
 	return (uri, data, desc)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
