@@ -9,12 +9,13 @@
 #### All imported libraries are native to (included in) Python 2.7.13+ and 3.6.X+ ####
 
 # Set some global variables here
-version = "0.5.3"
+version = "0.5.4"
 
 
 # Import libraries with names common to Python2 and Python3
 import re
 import ssl
+import sys
 import json
 import time
 import urllib
@@ -22,7 +23,7 @@ import inspect
 import webbrowser
 
 
-# Import libraries with names unique Python2 and Python3
+# Import libraries with names unique to Python2 and Python3
 try:
 	# Python3 URL Libraries
 	from urllib.request import urlopen
@@ -47,7 +48,6 @@ except ImportError:
 	from urllib2 import HTTPSHandler
 	# Python2 GUI Libraries
 	import Tkinter as tk
-
 
 # Import ttk seperately due to unique OS X paths
 try:
@@ -172,7 +172,7 @@ class topwindow:
 		self.weblink.pack(side="right")
 		self.weblink.bind("<Button-1>", self.open_web)
 		####################
-		self.versionlabel = tk.Label(master, text=r"Version "+version,)
+		self.versionlabel = tk.Label(master, text=r"Version "+version+" (Python %s.%s.%s" % sys.version_info[:3]+")",)
 		self.versionlabel.grid(row=7, column=2)
 		####################
 		if autologin:
@@ -338,7 +338,7 @@ class basicwindow:
 	def __init__(self, master):
 		self.basicwindow = tk.Toplevel(master)
 		self.basicwindow.title("Acid Basic Settings")
-		self.basicwindow.geometry('750x450')
+		self.basicwindow.geometry('900x450')
 		self.basicwindow.tk.call('wm','iconphoto',self.basicwindow._w,gui.logo)
 		self.bwcanvas = tk.Canvas(self.basicwindow)
 		self.bwcanvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=tk.YES)
@@ -822,7 +822,10 @@ class basicwindow:
 		canvasobject.itemconfig(window, width=event.width)
 		canvasobject.configure(scrollregion=canvasobject.bbox('all'))
 	def on_mousewheel(self, event):
-		self.bwcanvas.yview_scroll(int(-1*(event.delta/120)), "units")
+		if abs(event.delta) > 100:  # If we are on a Windows system which uses values of 120
+			self.bwcanvas.yview_scroll(int(-1*(event.delta/120)), "units")
+		else:  # If we are on a Mac which uses values of 1
+			self.bwcanvas.yview_scroll(int(event.delta * -1), "units")
 	def submit_ntp(self):
 		if check_ipdns_entry(self.ntpentry, self.ntpchecklabel, self.ntpchecktext):
 			if gui.login_check():
@@ -1327,7 +1330,10 @@ class systeminfo:
 		self.bwcanvas.itemconfig(self.interior_id, width=event.width)
 		self.bwcanvas.configure(scrollregion=self.bwcanvas.bbox('all'))
 	def on_mousewheel(self, event):
-		self.bwcanvas.yview_scroll(int(-1*(event.delta/120)), "units")
+		if abs(event.delta) > 100:  # If we are on a Windows system which uses values of 120
+			self.bwcanvas.yview_scroll(int(-1*(event.delta/120)), "units")
+		else:  # If we are on a Mac which uses values of 1
+			self.bwcanvas.yview_scroll(int(event.delta * -1), "units")
 	def create_headers(self, frame, mappings):
 		for header in mappings:
 			text = mappings[header]["headname"]
@@ -1634,7 +1640,10 @@ class ports:
 		canvasobject.itemconfig(window, width=event.width)
 		canvasobject.configure(scrollregion=canvasobject.bbox('all'))
 	def on_mousewheel(self, event):
-		self.bwcanvas.yview_scroll(int(-1*(event.delta/120)), "units")
+		if abs(event.delta) > 100:  # If we are on a Windows system which uses values of 120
+			self.bwcanvas.yview_scroll(int(-1*(event.delta/120)), "units")
+		else:  # If we are on a Mac which uses values of 1
+			self.bwcanvas.yview_scroll(int(event.delta * -1), "units")
 	def update_height(self):
 		self.bwcanvas.update()
 		self.bwcanvas.configure(scrollregion=self.bwcanvas.bbox("all"))
@@ -2077,7 +2086,13 @@ class acicalls:
 		self.password = password
 		self.hostname = hostname
 		self.baseurl = "https://" + self.hostname
-		self.gcontext = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+		try:
+			self.gcontext = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+		except AttributeError:
+			try:
+				self.gcontext = ssl.SSLContext(ssl.PROTOCOL_TLSv1_1)
+			except AttributeError:
+				self.gcontext = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
 		self.cj = CookieJar()
 		self.opener = build_opener(HTTPCookieProcessor(self.cj), HTTPSHandler(context=self.gcontext))
 		self.loginresponse = self._login()
