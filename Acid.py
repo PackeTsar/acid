@@ -9,7 +9,7 @@
 #### All imported libraries are native to (included in) Python 2.7.13+ and 3.6.X+ ####
 
 # Set some global variables here
-version = "0.5.4"
+version = "1.0.0"
 
 
 # Import libraries with names common to Python2 and Python3
