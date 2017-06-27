@@ -22,5 +22,13 @@ The initial setup of ACI can be a painful and confusing process due to the overw
 
 
 
+####   REQUIREMENTS   ####
+--------------------------------------
+
+OS:			**Windows, Linux, and MacOS** are supported and pre-compiled binaries are provided in the "Binaries" folder
+
+Interpreter:		**Python 2.7.X and 3.6.X** are compatible with the Acid source, but an interpreter is not required if you use the binaries.
+
+
 
 [logo]: http://www.packetsar.com/wp-content/uploads/acid-logo-tiny-100.png
