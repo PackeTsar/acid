@@ -23,7 +23,7 @@ The initial setup of ACI can be a painful and confusing process due to the overw
 --------------------------------------
 ####   REQUIREMENTS   ####
 
-OS:			**Windows, Linux, and MacOS** are supported and pre-compiled binaries are provided in the "Binaries" folder on the [Github](github_acid) repo
+OS:			**Windows, Linux, and MacOS** are supported and pre-compiled binaries are provided in the "Binaries" folder on the [Github][github_acid] repo
 
 Interpreter:		**Python 2.7.X and 3.6.X** are compatible with the Acid source, but an interpreter is not required if you use the binaries.
 
@@ -33,8 +33,8 @@ Interpreter:		**Python 2.7.X and 3.6.X** are compatible with the Acid source, bu
 Acid requires the use of Python 2.7.13 (or later) or 3.6.X due ACI's requirement for SSL TLS1.2 which is not included in older Python SSL libraries.
 
 ##### Windows
-  1. Install Python 2.7.13+ or Python 3.6.X interpreter from the [Python Website](python_website)
-  2. Download "pip-Win" from its [download site](pip_win)
+  1. Install Python 2.7.13+ or Python 3.6.X interpreter from the [Python Website][python_website]
+  2. Download "pip-Win" from its [download site][pip_win]
   3. Open pip-Win and run with command `venv -c -i  pyi-env-name`
   4. Install PyInstaller with command `pip install PyInstaller`
   5. Navigate a folder with acid.py and acid.ico files
@@ -42,7 +42,7 @@ Acid requires the use of Python 2.7.13 (or later) or 3.6.X due ACI's requirement
 
 ##### MacOS/Linux
   1. Install Python 2.7.13 and set as default interpreter
-	  - Install [Homebrew](homebrew)
+	  - Install [Homebrew][homebrew]
 	  - Open Terminal and use Homebrew to install updated Python: `brew install python`
 	  - Open the bash_profile in VI and add the new Python path: `more .bash_profile`
 	    - Insert the line at the bottom: `export PATH="/usr/local/Cellar/python/2.7.13/bin:${PATH}"`
