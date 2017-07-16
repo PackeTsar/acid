@@ -12,6 +12,10 @@ The version of **Acid** documented here is: **v1.0.0**
 ####   TABLE OF CONTENTS   ####
 
 1. [What is Acid?](#what-is-acid)
+2. [Requirements](#requirements)
+3. [Screenshots](#screenshots)
+4. [Compile](#compile)
+5. [Contributing](#contributing)
 
 
 -----------------------------------------
@@ -25,7 +29,7 @@ The initial setup of ACI can be a painful and confusing process due to the overw
 
 OS:			**Windows, Linux, and MacOS** are supported and pre-compiled binaries are provided in the "Binaries" folder on the [Github][github_acid] repo
 
-Interpreter:		**Python 2.7.X and 3.6.X** are compatible with the Acid source, but an interpreter is not required if you use the binaries.
+Interpreter:		**Python 2.7.13+ and 3.6.X** are compatible with the Acid source, but an interpreter is not required if you use the binaries.
 
 
 --------------------------------------
@@ -65,6 +69,15 @@ Acid requires the use of Python 2.7.13 (or later) or 3.6.X due ACI's requirement
   4. Run command to compile: `pyinstaller --onefile --windowed --icon=acid.ico --clean Acid.py`
 
 
+--------------------------------------
+####   CONTRIBUTING   ####
+
+If you would like to help out by contributing code or reporting issues, please do!
+
+Visit the GitHub page (https://github.com/PackeTsar/acid) and either report an issue or fork the project, commit some changes, and submit a pull request.
+
+
+--------------------------------------
 [logo]: http://www.packetsar.com/wp-content/uploads/acid-logo-tiny-100.png
 [github_acid]: https://github.com/PackeTsar/acid
 [python_website]: https://www.python.org/
