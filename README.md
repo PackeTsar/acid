@@ -29,6 +29,19 @@ Interpreter:		**Python 2.7.X and 3.6.X** are compatible with the Acid source, bu
 
 
 --------------------------------------
+####  SCREENSHOTS  ####
+
+**The Acid main window**
+![Acid][main-window]
+
+**The Acid basic settings window**
+![Acid][basic-settings-window]
+
+**The Acid port configuration window**
+![Acid][ports-window]
+
+
+--------------------------------------
 ####   COMPILE   ####
 Acid requires the use of Python 2.7.13 (or later) or 3.6.X due ACI's requirement for SSL TLS1.2 which is not included in older Python SSL libraries.
 
@@ -57,3 +70,6 @@ Acid requires the use of Python 2.7.13 (or later) or 3.6.X due ACI's requirement
 [python_website]: https://www.python.org/
 [pip_win]: https://sites.google.com/site/pydatalog/python/pip-for-windows
 [homebrew]: https://brew.sh/
+[main-window]: http://www.packetsar.com/wp-content/uploads/acid-main.png
+[basic-settings-window]: http://www.packetsar.com/wp-content/uploads/acid-basic.png
+[ports-window]: http://www.packetsar.com/wp-content/uploads/acid-ports.png
