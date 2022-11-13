@@ -78,7 +78,7 @@ Visit the GitHub page (https://github.com/PackeTsar/acid) and either report an i
 
 
 --------------------------------------
-[logo]: http://www.packetsar.com/wp-content/uploads/acid-logo-tiny-100.png
+[logo]: /acid-logo-tiny-100.png
 [github_acid]: https://github.com/PackeTsar/acid
 [python_website]: https://www.python.org/
 [pip_win]: https://sites.google.com/site/pydatalog/python/pip-for-windows
